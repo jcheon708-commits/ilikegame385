@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SRM 비선형 기후 시뮬레이션</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #0a0f1e;
+  color: #e0e0f0;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+}
+h1 { font-size: 22px; font-weight: 700; color: #fff; margin-bottom: 4px; text-align: center; }
+.subtitle { font-size: 13px; color: #6a7aaa; margin-bottom: 28px; text-align: center; }
+.container { width: 100%; max-width: 900px; }
+.top-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 16px; }
+.panel { background: #131929; border: 1px solid #1e2d50; border-radius: 12px; padding: 20px; }
+.panel-title { font-size: 12px; font-weight: 700; color: #5a6a9a; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+
+.scenario-row { display: flex; gap: 12px; margin-bottom: 14px; }
+.scenario-box { flex: 1; border-radius: 8px; padding: 12px 14px; border: 1.5px solid; }
+.scenario-a { background: #0d1d35; border-color: #378ADD; }
+.scenario-b { background: #1f0d0d; border-color: #e24b4a; }
+.scenario-label { font-size: 11px; font-weight: 700; letter-spacing: 0.8px; margin-bottom: 6px; }
+.label-a { color: #378ADD; }
+.label-b { color: #e24b4a; }
+.scenario-val { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 2px; }
+.scenario-desc { font-size: 11px; color: #6a7a9a; }
+
+.ctrl { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.ctrl label { font-size: 12px; color: #8a9abb; min-width: 80px; }
+.ctrl input[type=range] {
+  flex: 1; -webkit-appearance: none;
+  height: 4px; background: #1e2d50; border-radius: 2px; outline: none;
+}
+.ctrl input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 16px; height: 16px;
+  border-radius: 50%; background: #378ADD; cursor: pointer; border: 2px solid #0a0f1e;
+}
+.ctrl span { min-width: 60px; text-align: right; font-size: 13px; font-weight: 700; color: #fff; }
+
+.diff-badge {
+  display: inline-block; padding: 4px 12px;
+  background: #1a0a0a; border: 1px solid #4a1a1a;
+  border-radius: 20px; font-size: 12px; color: #ff6b6b;
+  margin-bottom: 14px;
+}
+
+button {
+  width: 100%; padding: 12px 0;
+  background: #1a2a4a; color: #7ab4f5;
+  border: 1px solid #2a3d6a; border-radius: 8px;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  transition: background 0.15s;
+}
+button:hover { background: #1e3258; }
+button:active { transform: scale(0.98); }
+
+.metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.metric { background: #0d1525; border: 1px solid #1e2d50; border-radius: 8px; padding: 12px 14px; }
+.metric .lbl { font-size: 11px; color: #4a5a7a; margin-bottom: 4px; }
+.metric .val { font-size: 22px; font-weight: 700; }
+.val-temp { color: #e24b4a; }
+.val-rain { color: #378ADD; }
+
+.msg-box {
+  background: #0d1525; border: 1px solid #1e2d50;
+  border-radius: 8px; padding: 12px 14px;
+  font-size: 12px; color: #7a8aaa; line-height: 1.7; min-height: 54px;
+}
+.msg-box b { color: #e0e0f0; }
+.danger { color: #e24b4a; font-weight: 700; }
+.safe { color: #4a9a6a; font-weight: 700; }
+
+.canvas-wrap {
+  position: relative; background: #0d1525;
+  border: 1px solid #1e2d50; border-radius: 12px;
+  overflow: hidden; margin-bottom: 12px;
+}
+canvas { display: block; width: 100%; height: auto; }
+.legend {
+  position: absolute; top: 12px; right: 14px;
+  display: flex; gap: 14px; font-size: 12px; color: #8899bb;
+}
+.legend-item { display: flex; align-items: center; gap: 6px; }
+.legend-line { width: 24px; height: 3px; border-radius: 2px; }
+
+.note { font-size: 11px; color: #2e3e5a; text-align: center; line-height: 1.7; }
+.note b { color: #3e4e6a; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>SRM 비선형 기후 시뮬레이션</h1>
+  <p class="subtitle">성층권 에어로졸 살포량의 미세한 차이가 기후 미래를 어떻게 바꾸는가</p>
+
+  <div class="top-grid">
+    <div class="panel">
+      <div class="panel-title">시나리오 설정</div>
+
+      <div class="scenario-row">
+        <div class="scenario-box scenario-a">
+          <div class="scenario-label label-a">시나리오 A (파란선)</div>
+          <div class="scenario-val" id="val-a">5.000 Tg/year</div>
+          <div class="scenario-desc">성층권 에어로졸 살포량</div>
+        </div>
+        <div class="scenario-box scenario-b">
+          <div class="scenario-label label-b">시나리오 B (빨간선)</div>
+          <div class="scenario-val" id="val-b">5.001 Tg/year</div>
+          <div class="scenario-desc">살포량 미세 증가</div>
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <label>기준 살포량</label>
+        <input type="range" min="10" max="100" value="50" step="1" id="sl-base">
+        <span id="v-base">5.0 Tg</span>
+      </div>
+      <div class="ctrl">
+        <label>차이 δ</label>
+        <input type="range" min="1" max="50" value="1" step="1" id="sl-delta">
+        <span id="v-delta">0.001 Tg</span>
+      </div>
+      <div class="ctrl">
+        <label>시뮬레이션 기간</label>
+        <input type="range" min="20" max="100" value="50" step="1" id="sl-year">
+        <span id="v-year">50년</span>
+      </div>
+
+      <div class="diff-badge" id="diff-badge">두 시나리오 차이: 0.001 Tg/year (0.02%)</div>
+
+      <button id="btn-run">시뮬레이션 실행</button>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">결과 비교 (시뮬레이션 종료 시점)</div>
+      <div class="metric-grid">
+        <div class="metric">
+          <div class="lbl">시나리오간 기온 편차</div>
+          <div class="val val-temp" id="m-temp">-</div>
+        </div>
+        <div class="metric">
+          <div class="lbl">한반도 강수량 차이</div>
+          <div class="val val-rain" id="m-rain">-</div>
+        </div>
+      </div>
+      <div class="msg-box" id="msg">시뮬레이션을 실행하면 결과가 표시됩니다.</div>
+    </div>
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="cv" width="900" height="300"></canvas>
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-line" style="background:#378ADD"></div>
+        <span id="leg-a">시나리오 A: 5.000 Tg/year</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-line" style="background:#e24b4a"></div>
+        <span id="leg-b">시나리오 B: 5.001 Tg/year</span>
+      </div>
+    </div>
+  </div>
+
+  <p class="note">
+    * 로렌츠 방정식(σ=10, ρ=28, β=8/3) 기반 비선형 민감도 시각화 | 살포량 수치는 로렌츠 초기값에 매핑된 상대값입니다.<br>
+    <b>실제 기후 모델 예측값이 아니며</b>, 비선형 시스템에서 미세한 초기 차이가 장기적으로 증폭되는 원리를 보여줍니다.
+  </p>
+</div>
+
+<script>
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const W = 900, H = 300;
+const PAD = { l: 58, r: 24, t: 24, b: 40 };
+
+const sigma = 10, rho = 28, beta = 8/3, dt = 0.01;
+
+function lorenz(x0, y0, steps) {
+  let x = x0, y = y0, z = 1.0;
+  const xs = [];
+  for (let i = 0; i < steps; i++) {
+    const dx = sigma*(y-x), dy = x*(rho-z)-y, dz = x*y - beta*z;
+    x += dx*dt; y += dy*dt; z += dz*dt;
+    xs.push(x);
+  }
+  return xs;
+}
+
+function toTemp(xs) { return xs.map(v => v * 0.12); }
+
+function getBase() { return 4.0 + parseInt(document.getElementById('sl-base').value) * 0.02; }
+function getDelta() { return parseInt(document.getElementById('sl-delta').value) * 0.001; }
+function getYears() { return parseInt(document.getElementById('sl-year').value); }
+
+function updateLabels() {
+  const base = getBase();
+  const delta = getDelta();
+  const years = getYears();
+  const pct = (delta/base*100).toFixed(3);
+
+  document.getElementById('val-a').textContent = base.toFixed(3) + ' Tg/year';
+  document.getElementById('val-b').textContent = (base + delta).toFixed(3) + ' Tg/year';
+  document.getElementById('v-base').textContent = base.toFixed(1) + ' Tg';
+  document.getElementById('v-delta').textContent = delta.toFixed(3) + ' Tg';
+  document.getElementById('v-year').textContent = years + '년';
+  document.getElementById('diff-badge').textContent = `두 시나리오 차이: ${delta.toFixed(3)} Tg/year (${pct}%)`;
+  document.getElementById('leg-a').textContent = `시나리오 A: ${base.toFixed(3)} Tg/year`;
+  document.getElementById('leg-b').textContent = `시나리오 B: ${(base+delta).toFixed(3)} Tg/year`;
+}
+
+document.getElementById('sl-base').oninput = updateLabels;
+document.getElementById('sl-delta').oninput = updateLabels;
+document.getElementById('sl-year').oninput = updateLabels;
+
+function drawGrid(minV, maxV, years) {
+  ctx.fillStyle = '#0d1525';
+  ctx.fillRect(0, 0, W, H);
+  const gx = W - PAD.l - PAD.r, gy = H - PAD.t - PAD.b;
+
+  ctx.strokeStyle = '#1a2a42'; ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 5; i++) {
+    const y = PAD.t + (i/5)*gy;
+    ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(PAD.l+gx, y); ctx.stroke();
+    const val = maxV - (i/5)*(maxV-minV);
+    ctx.fillStyle = '#4a5a7a'; ctx.font = '11px Arial'; ctx.textAlign = 'right';
+    ctx.fillText((val >= 0 ? '+' : '') + val.toFixed(1) + '°C', PAD.l-6, y+4);
+  }
+  for (let i = 0; i <= 5; i++) {
+    const x = PAD.l + (i/5)*gx;
+    ctx.beginPath(); ctx.moveTo(x, PAD.t); ctx.lineTo(x, PAD.t+gy); ctx.stroke();
+    ctx.fillStyle = '#4a5a7a'; ctx.textAlign = 'center';
+    ctx.fillText(Math.round(i/5*years) + '년', x, H-10);
+  }
+  const y0pos = PAD.t + (maxV/(maxV-minV))*gy;
+  if (y0pos >= PAD.t && y0pos <= PAD.t+gy) {
+    ctx.strokeStyle = '#2a3a5a'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(PAD.l, y0pos); ctx.lineTo(PAD.l+gx, y0pos); ctx.stroke();
+  }
+  ctx.fillStyle = '#3a4a6a'; ctx.font = '11px Arial'; ctx.textAlign = 'center';
+  ctx.save(); ctx.translate(14, PAD.t+gy/2); ctx.rotate(-Math.PI/2);
+  ctx.fillText('기온 편차 (°C)', 0, 0); ctx.restore();
+}
+
+function drawShade(t1, t2, minV, maxV) {
+  const gx = W-PAD.l-PAD.r, gy = H-PAD.t-PAD.b, n = t1.length;
+  ctx.beginPath();
+  t1.forEach((v,i) => {
+    const x = PAD.l+(i/(n-1))*gx, y = PAD.t+(1-(v-minV)/(maxV-minV))*gy;
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  for (let i = n-1; i>=0; i--) {
+    const x = PAD.l+(i/(n-1))*gx, y = PAD.t+(1-(t2[i]-minV)/(maxV-minV))*gy;
+    ctx.lineTo(x,y);
+  }
+  ctx.closePath(); ctx.fillStyle='rgba(226,75,74,0.08)'; ctx.fill();
+}
+
+function drawLine(temps, minV, maxV, color) {
+  const gx = W-PAD.l-PAD.r, gy = H-PAD.t-PAD.b, n = temps.length;
+  ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 2.5; ctx.globalAlpha = 0.9;
+  temps.forEach((v,i) => {
+    const x = PAD.l+(i/(n-1))*gx, y = PAD.t+(1-(v-minV)/(maxV-minV))*gy;
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.stroke(); ctx.globalAlpha = 1;
+}
+
+function run() {
+  updateLabels();
+  const base = getBase();
+  const delta = getDelta();
+  const years = getYears();
+  const steps = Math.round(years * 20);
+
+  const x0a = 0.1 + (base - 4.0) * 0.01;
+  const x0b = x0a + delta * 0.1;
+
+  const r1 = lorenz(x0a, 0.1, steps);
+  const r2 = lorenz(x0b, 0.1, steps);
+  const t1 = toTemp(r1);
+  const t2 = toTemp(r2);
+
+  const all = [...t1, ...t2];
+  const minV = Math.floor(Math.min(...all)*10)/10 - 0.5;
+  const maxV = Math.ceil(Math.max(...all)*10)/10 + 0.5;
+
+  drawGrid(minV, maxV, years);
+  drawShade(t1, t2, minV, maxV);
+  drawLine(t1, minV, maxV, '#378ADD');
+  drawLine(t2, minV, maxV, '#e24b4a');
+
+  const finalDiff = Math.abs(t1[t1.length-1] - t2[t2.length-1]);
+  const rainDiff = (finalDiff * 12.5).toFixed(1);
+  const pct = (delta/base*100).toFixed(3);
+
+  document.getElementById('m-temp').textContent = '+' + finalDiff.toFixed(2) + '°C';
+  document.getElementById('m-rain').textContent = '-' + rainDiff + '%';
+
+  const level = finalDiff > 3
+    ? '<span class="danger">완전히 다른 방향으로 발산</span>'
+    : finalDiff > 1.5
+    ? '<span class="danger">상당히 발산</span>'
+    : '<span class="safe">서서히 벌어지는 중</span>';
+
+  document.getElementById('msg').innerHTML =
+    `살포량 <b>${base.toFixed(3)} Tg</b> vs <b>${(base+delta).toFixed(3)} Tg</b> — 고작 <b>${pct}% 차이</b><br>` +
+    `${years}년 후 두 시나리오의 기온은 ${level} — ` +
+    `처음엔 거의 같아 보이던 두 선이 시간이 지나면서 전혀 다른 미래를 그립니다.`;
+}
+
+document.getElementById('btn-run').onclick = run;
+updateLabels();
+run();
+</script>
+</body>
+</html>

@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>인공강우 WBF 시뮬레이션</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #f5efe6;
+  color: #3d2b1f;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; padding: 24px 20px;
+}
+h1 { font-size: 20px; font-weight: 700; color: #5a3e2b; margin-bottom: 4px; text-align: center; }
+.subtitle { font-size: 12px; color: #9a7a6a; margin-bottom: 16px; text-align: center; }
+.container { width: 100%; max-width: 960px; }
+
+.ctrl-panel {
+  background: #fff8f0; border: 1px solid #e8d5c0;
+  border-radius: 14px; padding: 14px 20px; margin-bottom: 10px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+  box-shadow: 0 2px 8px rgba(180,120,80,0.08);
+}
+.ctrl-label { font-size: 11px; font-weight: 700; color: #b07a50; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.ctrl { display: flex; align-items: center; gap: 10px; }
+.ctrl label { font-size: 12px; color: #8a6a5a; min-width: 90px; }
+.ctrl input[type=range] {
+  flex: 1; -webkit-appearance: none; height: 6px;
+  background: #d4e8c2; border-radius: 3px; outline: none;
+}
+.ctrl input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 20px; height: 20px;
+  border-radius: 50%; background: #6aaa4a; cursor: pointer;
+  border: 2px solid #fff; box-shadow: 0 1px 4px rgba(100,160,60,0.4);
+}
+.ctrl span { min-width: 72px; text-align: right; font-size: 14px; font-weight: 700; color: #5a9a3a; }
+.cond-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.cond-box { background: #fdf0e0; border: 1px solid #e8d0b0; border-radius: 8px; padding: 7px 10px; }
+.cond-box .lbl { font-size: 10px; color: #b09070; margin-bottom: 2px; }
+.cond-box .val { font-size: 12px; font-weight: 700; color: #6a8aba; }
+
+.canvas-wrap {
+  border-radius: 14px; overflow: hidden; margin-bottom: 10px;
+  box-shadow: 0 4px 16px rgba(180,120,80,0.12);
+  border: 1px solid #e8d5c0;
+}
+canvas { display: block; width: 100%; height: auto; }
+
+.bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.panel {
+  background: #fff8f0; border: 1px solid #e8d5c0;
+  border-radius: 12px; padding: 12px 14px;
+  box-shadow: 0 2px 8px rgba(180,120,80,0.06);
+}
+.panel-title { font-size: 11px; font-weight: 700; color: #b07a50; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.legend-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+.legend-dot { width: 13px; height: 13px; border-radius: 50%; flex-shrink: 0; margin-top: 2px; }
+.legend-text { font-size: 11px; color: #7a5a4a; line-height: 1.5; }
+.legend-text b { color: #3d2b1f; }
+.insight-text { font-size: 12px; color: #7a5a4a; line-height: 1.8; }
+.insight-text b { color: #3d2b1f; }
+.good { color: #5a9a3a; font-weight: 700; }
+.warn { color: #cc4a3a; font-weight: 700; }
+.neutral { color: #d08030; font-weight: 700; }
+.note { font-size: 11px; color: #c0a080; text-align: center; line-height: 1.6; }
+.note b { color: #a08060; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>인공강우 WBF 과정 시뮬레이션</h1>
+  <p class="subtitle">슬라이더를 움직여 AgI 살포량을 실시간으로 조절하세요</p>
+
+  <div class="ctrl-panel">
+    <div>
+      <div class="ctrl-label">조작 변수 — 실시간 조절</div>
+      <div class="ctrl">
+        <label>AgI 살포량</label>
+        <input type="range" min="0" max="100" value="0" step="1" id="sl-agi">
+        <span id="v-agi">0 g/m³</span>
+      </div>
+    </div>
+    <div>
+      <div class="ctrl-label">자연 조건 (고정)</div>
+      <div class="cond-grid">
+        <div class="cond-box"><div class="lbl">구름 온도</div><div class="val">-10°C</div></div>
+        <div class="cond-box"><div class="lbl">과냉각 물방울</div><div class="val">풍부</div></div>
+        <div class="cond-box"><div class="lbl">자연 빙정핵</div><div class="val">부족</div></div>
+        <div class="cond-box"><div class="lbl">WBF 조건</div><div class="val">충족</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="cv" width="960" height="460"></canvas>
+  </div>
+
+  <div class="bottom-grid">
+    <div class="panel">
+      <div class="panel-title">각 요소가 의미하는 것</div>
+      <div class="legend-row">
+        <div class="legend-dot" style="background:#6a9acc"></div>
+        <div class="legend-text"><b>파란 원 — 과냉각 물방울</b><br>0℃ 이하에서도 얼지 않은 물방울. 빙정핵 없이는 강수 불가</div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-dot" style="background:#6aaa4a"></div>
+        <div class="legend-text"><b>초록 삼각형 — AgI 빙정핵</b><br>얼음 유사 구조로 물방울을 빙정으로 전환시키는 씨앗</div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-dot" style="background:#c8eaff; border:1px solid #7ab0d8"></div>
+        <div class="legend-text"><b>흰 결정 — 성장하는 빙정</b><br>수증기를 흡수해 커지는 얼음 결정 (WBF 과정의 핵심)</div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-dot" style="background:#5aaa88"></div>
+        <div class="legend-text"><b>새싹 → 꽃 → 소멸</b><br>강수 후 식물 성장 사이클. 비가 많을수록 더 빨리 번성</div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-dot" style="background:#7ab8e0"></div>
+        <div class="legend-text"><b>웅덩이 / 동물</b><br>비 올 때 🐸🐌 출몰 / 건조할 때 🐍🦂 출몰 (가끔 등장)</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">지금 구름 속에서 일어나는 일</div>
+      <div class="insight-text" id="insight">슬라이더를 조절하면 실시간으로 변화합니다.</div>
+    </div>
+  </div>
+
+  <p class="note">
+    * WBF(Wegener-Bergeron-Findeisen) 과정 기반 개념적 시각화<br>
+    <b>서애숙(2001), 양하영 외(2010), 정운선 외(2021)</b> 연구를 바탕으로 구성
+  </p>
+</div>
+
+<script>
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const W = 960, H = 460;
+const CLOUD = { x: 80, y: 55, w: 800, h: 190 };
+const GROUND_Y = 360;
+
+let drops = [], crystals = [], plants = [], puddles = [], animals = [];
+let tick = 0, currentAgi = 0;
+
+function addPlant(x) {
+  if (plants.length >= 18) return;
+  if (plants.some(p => Math.abs(p.x - x) < 28)) return;
+  plants.push({ x, stage: 0, h: 0, maxH: 16+Math.random()*10, age: 0, alpha: 1,
+    flowerColor: ['#ffb3c6','#ffcc80','#b5ead7','#c9b1ff','#fff5ba'][Math.floor(Math.random()*5)] });
+}
+
+function addPuddle(x) {
+  const ex = puddles.find(p => Math.abs(p.x-x) < 45);
+  if (ex) { ex.r = Math.min(ex.r+1.5, 30); return; }
+  if (puddles.length >= 5) return;
+  puddles.push({ x, y: GROUND_Y+10, r: 8, alpha: 1 });
+}
+
+function addAnimal(type) {
+  // 출현 빈도 매우 낮게: 2000틱당 1번 확률
+  if (Math.random() > 0.0005) return;
+  if (animals.filter(a=>a.type===type).length >= 2) return;
+  animals.push({
+    type, x: 80+Math.random()*(W-160),
+    y: GROUND_Y+6, dir: Math.random()>.5?1:-1,
+    speed: 0.3+Math.random()*0.3, alpha: 0, age: 0
+  });
+}
+
+function initDrops() {
+  drops = [];
+  for (let i=0;i<90;i++) drops.push({
+    x: CLOUD.x+20+Math.random()*(CLOUD.w-40),
+    y: CLOUD.y+20+Math.random()*(CLOUD.h-40),
+    r: 4+Math.random()*4, vx:(Math.random()-.5)*.4, vy:(Math.random()-.5)*.4, alive:true
+  });
+}
+
+function addCrystal(agi) {
+  if (crystals.length>=Math.floor(agi*.4)) return;
+  if (Math.random()>.05) return;
+  crystals.push({
+    x:CLOUD.x+40+Math.random()*(CLOUD.w-80), y:CLOUD.y+30+Math.random()*(CLOUD.h-60),
+    size:2, maxSize:10+Math.random()*10, angle:Math.random()*Math.PI,
+    fallen:false, fy:0, fv:0, splashR:0, splashDone:false
+  });
+}
+
+function drawBg() {
+  const wet = Math.min(1, currentAgi/50);
+  const dry = 1 - wet;
+
+  // 하늘 — 따뜻한 파스텔
+  const skyR = Math.round(210 + dry*20);
+  const skyG = Math.round(230 - dry*30);
+  const skyB = Math.round(255 - dry*60);
+  ctx.fillStyle = `rgb(${skyR},${skyG},${skyB})`;
+  ctx.fillRect(0, 0, W, H);
+
+  // 태양
+  const sunAlpha = 0.3 + dry*0.4;
+  ctx.save(); ctx.globalAlpha = sunAlpha;
+  ctx.fillStyle = '#ffe066';
+  ctx.beginPath(); ctx.arc(W-90, 55, 36, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#ffd040'; ctx.lineWidth = 2;
+  for (let i=0;i<8;i++) {
+    const a = (Math.PI/4)*i;
+    ctx.beginPath();
+    ctx.moveTo(W-90+44*Math.cos(a), 55+44*Math.sin(a));
+    ctx.lineTo(W-90+56*Math.cos(a), 55+56*Math.sin(a));
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // 배경 언덕
+  ctx.fillStyle = `rgba(${Math.round(160+dry*40)},${Math.round(200-dry*60)},${Math.round(120-dry*40)},0.35)`;
+  ctx.beginPath(); ctx.moveTo(0, GROUND_Y);
+  ctx.bezierCurveTo(200, GROUND_Y-60, 400, GROUND_Y-40, 600, GROUND_Y-55);
+  ctx.bezierCurveTo(750, GROUND_Y-65, 880, GROUND_Y-30, W, GROUND_Y);
+  ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath(); ctx.fill();
+
+  // 구름 영역
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.beginPath(); ctx.roundRect(CLOUD.x, CLOUD.y, CLOUD.w, CLOUD.h, 22); ctx.fill();
+  ctx.strokeStyle = '#b8d4e8'; ctx.lineWidth = 1.5; ctx.stroke();
+
+  // 구름 라벨
+  ctx.fillStyle = '#7a9ab8'; ctx.font = '11px Arial'; ctx.textAlign = 'left';
+  ctx.fillText('구름 내부 (온도: -10°C, 과냉각 물방울 존재)', CLOUD.x+14, CLOUD.y+18);
+
+  // 지면
+  const grR = Math.round(120+dry*60), grG = Math.round(160-dry*70), grB = Math.round(80-dry*30);
+  ctx.fillStyle = `rgb(${grR},${grG},${grB})`;
+  ctx.fillRect(0, GROUND_Y, W, H-GROUND_Y);
+  ctx.fillStyle = `rgb(${Math.round(grR+20)},${Math.round(grG+20)},${Math.round(grB+10)})`;
+  ctx.fillRect(0, GROUND_Y, W, 4);
+
+  // 잔디
+  for (let i=0;i<W;i+=9) {
+    const gh = 3+Math.sin(i*.3+tick*.01)*2;
+    const gAlpha = 0.4 + wet*0.5;
+    const gR=Math.round(80+dry*60), gG=Math.round(130-dry*50), gB=Math.round(60);
+    ctx.strokeStyle = `rgba(${gR},${gG},${gB},${gAlpha})`; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(i, GROUND_Y); ctx.lineTo(i+2, GROUND_Y-gh); ctx.stroke();
+  }
+
+  // 대기 라벨
+  ctx.fillStyle = '#a0b8c8'; ctx.font='10px Arial'; ctx.textAlign='right';
+  ctx.fillText('대기층 (0°C 이상 → 낙하 시 빗방울로 녹음)', W-12, GROUND_Y-6);
+}
+
+function drawPuddles() {
+  puddles.forEach((p,i) => {
+    ctx.save(); ctx.globalAlpha = p.alpha*0.75;
+    ctx.fillStyle = '#a8d8f0';
+    ctx.beginPath(); ctx.ellipse(p.x, p.y, p.r*2, p.r*0.55, 0, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = '#78b8e0'; ctx.lineWidth=0.8; ctx.stroke();
+    if (tick%70<35) {
+      ctx.strokeStyle='rgba(100,180,230,0.4)'; ctx.lineWidth=0.6;
+      ctx.beginPath(); ctx.ellipse(p.x, p.y, p.r*1.5, p.r*0.35, 0, 0, Math.PI*2); ctx.stroke();
+    }
+    ctx.restore();
+    if (currentAgi<15) { p.r-=0.01; p.alpha-=0.0008; }
+    if (p.r<2||p.alpha<0) puddles.splice(i,1);
+  });
+}
+
+function drawPlants() {
+  plants.forEach((p,i) => {
+    ctx.save(); ctx.globalAlpha=p.alpha;
+    const top = GROUND_Y - p.h;
+    // 줄기
+    ctx.strokeStyle='#5a9a3a'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(p.x, GROUND_Y); ctx.lineTo(p.x, top); ctx.stroke();
+
+    if (p.stage>=1 && p.h>5) {
+      // 잎 왼쪽
+      ctx.fillStyle='#7acc5a';
+      ctx.beginPath();
+      ctx.moveTo(p.x, top+p.h*.45);
+      ctx.quadraticCurveTo(p.x-14, top+p.h*.2, p.x-10, top+2);
+      ctx.quadraticCurveTo(p.x-3, top+p.h*.35, p.x, top+p.h*.45);
+      ctx.fill();
+      // 잎 오른쪽
+      ctx.fillStyle='#8ade6a';
+      ctx.beginPath();
+      ctx.moveTo(p.x, top+p.h*.55);
+      ctx.quadraticCurveTo(p.x+14, top+p.h*.3, p.x+11, top+3);
+      ctx.quadraticCurveTo(p.x+4, top+p.h*.45, p.x, top+p.h*.55);
+      ctx.fill();
+    }
+
+    if (p.stage===2) {
+      // 꽃잎
+      for (let k=0;k<5;k++) {
+        const a=(Math.PI*2/5)*k + tick*0.005;
+        ctx.fillStyle=p.flowerColor;
+        ctx.beginPath();
+        ctx.ellipse(p.x+Math.cos(a)*5.5, top+Math.sin(a)*5.5, 4.5, 3, a, 0, Math.PI*2);
+        ctx.fill();
+      }
+      // 꽃술
+      ctx.fillStyle='#ffe066';
+      ctx.beginPath(); ctx.arc(p.x, top, 4, 0, Math.PI*2); ctx.fill();
+    } else {
+      // 새싹 끝
+      ctx.fillStyle='#9adc7a';
+      ctx.beginPath(); ctx.arc(p.x, top, 3, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+
+    p.age++;
+    if (p.stage===0) { p.h+=0.035; if (p.h>=p.maxH) p.stage=1; }
+    else if (p.stage===1 && p.age>450) p.stage=2;
+    else if (p.stage===2 && p.age>800) p.stage=3;
+    else if (p.stage===3) { p.alpha-=0.003; if (p.alpha<=0) plants.splice(i,1); }
+    if (currentAgi<8 && p.stage<3) { p.stage=3; }
+  });
+}
+
+function drawAnimals() {
+  animals.forEach((a,i) => {
+    a.age++; a.alpha=Math.min(1, a.alpha+0.015);
+    a.x+=a.dir*a.speed;
+    if (a.x<70||a.x>W-70) a.dir*=-1;
+    ctx.save(); ctx.globalAlpha=a.alpha;
+    ctx.font='20px Arial'; ctx.textAlign='center';
+    const emoji = a.type==='frog'?'🐸':a.type==='snail'?'🐌':a.type==='snake'?'🐍':'🦂';
+    ctx.fillText(emoji, a.x, a.y);
+    ctx.restore();
+    // 수명 길게 (800틱)
+    if (a.age>800) { a.alpha-=0.015; if(a.alpha<=0) animals.splice(i,1); }
+    if (currentAgi>30&&(a.type==='snake'||a.type==='scorpion')) a.alpha-=0.01;
+    if (currentAgi<15&&(a.type==='frog'||a.type==='snail')) a.alpha-=0.01;
+  });
+}
+
+function drawDrop(d) {
+  if (!d.alive) return;
+  ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, Math.PI*2);
+  ctx.fillStyle='rgba(100,160,220,0.5)'; ctx.fill();
+  ctx.strokeStyle='#6aaade'; ctx.lineWidth=0.5; ctx.stroke();
+}
+
+function drawCrystal(c) {
+  if (c.fallen&&c.fy>GROUND_Y+25) return;
+  const cx=c.x, cy=c.fallen?c.fy:c.y, s=c.size;
+  if (c.fallen) {
+    ctx.beginPath(); ctx.arc(cx,cy,Math.min(s*.45,5),0,Math.PI*2);
+    ctx.fillStyle='#5aaade'; ctx.fill();
+    ctx.strokeStyle='rgba(80,160,220,.3)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx,cy-12); ctx.stroke();
+    if (c.splashR>0&&c.splashR<26) {
+      ctx.strokeStyle=`rgba(80,160,220,${.45-c.splashR/58})`; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.arc(cx,GROUND_Y,c.splashR,0,Math.PI*2); ctx.stroke();
+      c.splashR+=0.9;
+    }
+    return;
+  }
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(c.angle);
+  for (let i=0;i<6;i++) {
+    const a=(Math.PI/3)*i;
+    ctx.strokeStyle=`rgba(140,200,240,${.5+s/30})`; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(s*Math.cos(a),s*Math.sin(a)); ctx.stroke();
+    const mx=s*.55*Math.cos(a),my=s*.55*Math.sin(a),pa=a+Math.PI/2;
+    ctx.strokeStyle=`rgba(140,200,240,${.3+s/40})`; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(mx,my); ctx.lineTo(mx+s*.28*Math.cos(pa),my+s*.28*Math.sin(pa)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(mx,my); ctx.lineTo(mx-s*.28*Math.cos(pa),my-s*.28*Math.sin(pa)); ctx.stroke();
+  }
+  ctx.restore();
+  if (s<6) {
+    ctx.fillStyle='#6aaa4a';
+    ctx.beginPath(); ctx.moveTo(cx,cy-4); ctx.lineTo(cx+3.5,cy+2); ctx.lineTo(cx-3.5,cy+2); ctx.closePath(); ctx.fill();
+  }
+  if (s>5&&tick%40<20) {
+    for (let i=0;i<3;i++) {
+      const a=(Math.PI*2/3)*i+tick*.015, dist=28;
+      const sx=cx+dist*Math.cos(a), sy=cy+dist*Math.sin(a);
+      if (sx<CLOUD.x||sx>CLOUD.x+CLOUD.w||sy<CLOUD.y||sy>CLOUD.y+CLOUD.h) continue;
+      ctx.strokeStyle='rgba(100,170,220,.2)'; ctx.lineWidth=1;
+      ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(cx+(s+2)*Math.cos(a+Math.PI),cy+(s+2)*Math.sin(a+Math.PI)); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }
+}
+
+function drawAgiEffect(agi) {
+  if (agi===0) return;
+  ctx.fillStyle='#8899aa'; ctx.font='bold 14px Arial'; ctx.textAlign='left';
+  ctx.fillText('✈', CLOUD.x+20, CLOUD.y-12);
+  ctx.fillStyle='#6aaa4a'; ctx.font='11px Arial';
+  ctx.fillText(`AgI 살포 중 (${agi} g/m³)`, CLOUD.x+42, CLOUD.y-12);
+  for (let i=0;i<5;i++) {
+    const phase=(tick*2+i*18)%(CLOUD.h-20);
+    ctx.fillStyle=`rgba(100,170,80,${.6-phase/(CLOUD.h*1.5)})`;
+    ctx.beginPath(); ctx.arc(CLOUD.x+58+i*14,CLOUD.y+phase*.3,2,0,Math.PI*2); ctx.fill();
+  }
+}
+
+function drawStatusBox() {
+  const alive=drops.filter(d=>d.alive).length;
+  const growing=crystals.filter(c=>!c.fallen).length;
+  const fallen=crystals.filter(c=>c.fallen).length;
+  ctx.fillStyle='rgba(255,248,240,0.92)';
+  ctx.beginPath(); ctx.roundRect(W-205,CLOUD.y+8,188,118,10); ctx.fill();
+  ctx.strokeStyle='#e0c8a8'; ctx.lineWidth=1; ctx.stroke();
+  ctx.font='bold 10px Arial'; ctx.fillStyle='#b07a50'; ctx.textAlign='left';
+  ctx.fillText('실시간 상태', W-193, CLOUD.y+24);
+  ctx.font='11px Arial';
+  ctx.fillStyle='#6a9acc'; ctx.fillText(`과냉각 물방울: ${alive}개`, W-193,CLOUD.y+40);
+  ctx.fillStyle='#6aaa4a'; ctx.fillText(`빙정핵·빙정: ${growing}개`, W-193,CLOUD.y+54);
+  ctx.fillStyle='#5aaade'; ctx.fillText(`강수 낙하: ${fallen}개`, W-193,CLOUD.y+68);
+  ctx.fillStyle='#7acc5a'; ctx.fillText(`식물: ${plants.length}개`, W-193,CLOUD.y+82);
+  ctx.fillStyle='#7ab8e0'; ctx.fillText(`웅덩이: ${puddles.length}개`, W-193,CLOUD.y+96);
+  const status=fallen>5?'강수 발생!':growing>0?'WBF 과정 진행 중':'강수 없음';
+  const col=fallen>5?'#5a9a3a':growing>0?'#d08030':'#a09080';
+  ctx.fillStyle=col; ctx.font='bold 11px Arial'; ctx.fillText(status,W-193,CLOUD.y+112);
+}
+
+function getInsight(agi) {
+  if (agi===0) return `<b>AgI 살포량: 0 g/m³</b><br><br>빙정핵이 없어 과냉각 물방울이 구름 속에 그대로 떠 있습니다.<br>구름은 있지만 <span class="warn">강수로 이어지지 않는 상태</span>입니다.<br>건조한 환경에서 간혹 🐍뱀·🦂전갈이 등장합니다.<br><br>슬라이더를 오른쪽으로 움직여보세요.`;
+  if (agi<30) return `<b>AgI 살포량: ${agi} g/m³ (소량)</b><br><br>빙정핵이 일부 생성되어 WBF 과정이 시작됩니다.<br>빙정 주변에서 수증기 이동(점선)이 일어나고 있습니다.<br><br><span class="neutral">강수 효과: 약함</span> — 새싹이 조금씩 돋기 시작합니다.`;
+  if (agi<70) return `<b>AgI 살포량: ${agi} g/m³ (적정)</b><br><br>충분한 빙정핵으로 WBF 과정이 활발합니다.<br>빙정이 성장해 강수로 낙하하고, 식물이 새싹→꽃으로 피어납니다.<br>웅덩이가 생기고 간혹 🐸개구리·🐌달팽이가 등장합니다.<br><br><span class="good">강수 효과: 양호</span> — 국내 효과확인율 74.1% 수준`;
+  return `<b>AgI 살포량: ${agi} g/m³ (과다)</b><br><br>빙정핵이 너무 많으면 한정된 수증기를 나눠 가져<br>개별 빙정이 충분히 성장하지 못합니다.<br>살포량 대비 강수량이 줄어드는 <b>'Overseeding'</b> 현상입니다.<br><br><span class="warn">강수 효과: 감소</span>`;
+}
+
+function loop() {
+  const agi=parseInt(document.getElementById('sl-agi').value);
+  if (Math.abs(currentAgi-agi)>.5) currentAgi+=(agi-currentAgi)*.05; else currentAgi=agi;
+
+  addCrystal(currentAgi);
+  const targetCount=Math.floor(currentAgi*.4);
+  if (crystals.filter(c=>!c.fallen).length>targetCount+2) {
+    const idx=crystals.findIndex(c=>!c.fallen&&c.size<4);
+    if (idx>=0) crystals.splice(idx,1);
+  }
+
+  // 동물 출현 빈도 매우 낮게
+  if (currentAgi>30) { addAnimal('frog'); addAnimal('snail'); }
+  else if (currentAgi<15) { addAnimal('snake'); addAnimal('scorpion'); }
+
+  drops.forEach(d=>{
+    if (!d.alive) return;
+    d.x+=d.vx; d.y+=d.vy;
+    if (d.x<CLOUD.x+5) d.vx=Math.abs(d.vx);
+    if (d.x>CLOUD.x+CLOUD.w-5) d.vx=-Math.abs(d.vx);
+    if (d.y<CLOUD.y+5) d.vy=Math.abs(d.vy);
+    if (d.y>CLOUD.y+CLOUD.h-5) d.vy=-Math.abs(d.vy);
+    crystals.forEach(c=>{
+      if (c.fallen) return;
+      if (Math.hypot(d.x-c.x,d.y-c.y)<35&&c.size>4&&Math.random()<.003) {
+        d.r-=.05; if (d.r<=.5) d.alive=false;
+      }
+    });
+  });
+
+  crystals.forEach(c=>{
+    if (c.fallen) {
+      c.fy+=c.fv; c.fv+=.18;
+      if (c.fy>=GROUND_Y&&!c.splashDone) {
+        c.splashDone=true; c.splashR=1;
+        if (currentAgi>10) { addPlant(c.x); addPuddle(c.x); }
+      }
+      if (c.fy>GROUND_Y+28) {
+        c.fallen=false; c.size=2;
+        c.x=CLOUD.x+40+Math.random()*(CLOUD.w-80);
+        c.y=CLOUD.y+30+Math.random()*(CLOUD.h-60);
+        c.maxSize=10+Math.random()*10;
+        c.splashR=0; c.splashDone=false; c.fy=0; c.fv=0;
+        const dead=drops.filter(d=>!d.alive);
+        if (dead.length>0) {
+          const d=dead[0]; d.alive=true; d.r=4+Math.random()*4;
+          d.x=CLOUD.x+20+Math.random()*(CLOUD.w-40);
+          d.y=CLOUD.y+20+Math.random()*(CLOUD.h-40);
+        }
+      }
+      return;
+    }
+    c.angle+=.002;
+    if (currentAgi>0) { c.size+=.04*(currentAgi/50); if (c.size>=c.maxSize){c.fallen=true;c.fy=c.y;c.fv=1;} }
+  });
+
+  drawBg();
+  drawPuddles();
+  drawPlants();
+  drawAnimals();
+  drawAgiEffect(Math.round(currentAgi));
+  drops.forEach(drawDrop);
+  crystals.forEach(drawCrystal);
+  drawStatusBox();
+  tick++;
+  requestAnimationFrame(loop);
+}
+
+document.getElementById('sl-agi').oninput=function(){
+  const v=parseInt(this.value);
+  document.getElementById('v-agi').textContent=v+' g/m³';
+  document.getElementById('insight').innerHTML=getInsight(v);
+};
+
+initDrops();
+document.getElementById('insight').innerHTML=getInsight(0);
+loop();
+</script>
+</body>
+</html>

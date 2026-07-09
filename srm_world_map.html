@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SRM 세계 기후 영향 시뮬레이션</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #0a0f1e;
+  color: #e0e0f0;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 20px;
+}
+h1 { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 4px; text-align: center; }
+.subtitle { font-size: 12px; color: #5a6a9a; margin-bottom: 20px; text-align: center; }
+.container { width: 100%; max-width: 960px; }
+
+.ctrl-panel {
+  background: #131929;
+  border: 1px solid #1e2d50;
+  border-radius: 12px;
+  padding: 18px 20px;
+  margin-bottom: 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.ctrl-group {}
+.ctrl-label { font-size: 11px; font-weight: 700; color: #5a6a9a; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+.ctrl { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.ctrl label { font-size: 12px; color: #8a9abb; min-width: 90px; }
+.ctrl input[type=range] {
+  flex: 1; -webkit-appearance: none;
+  height: 4px; border-radius: 2px; outline: none;
+}
+.ctrl input[type=range].blue { background: #1a3a6a; }
+.ctrl input[type=range].blue::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 16px; height: 16px;
+  border-radius: 50%; background: #378ADD; cursor: pointer; border: 2px solid #0a0f1e;
+}
+.ctrl input[type=range].orange { background: #3a2010; }
+.ctrl input[type=range].orange::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 16px; height: 16px;
+  border-radius: 50%; background: #e8903a; cursor: pointer; border: 2px solid #0a0f1e;
+}
+.ctrl span { min-width: 70px; text-align: right; font-size: 13px; font-weight: 700; color: #fff; }
+
+.var-display {
+  background: #0d1525;
+  border: 1px solid #1e2d50;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: #6a7aaa;
+  line-height: 1.6;
+}
+.var-display b { color: #e0e0f0; }
+
+.map-wrap {
+  position: relative;
+  background: #0d1525;
+  border: 1px solid #1e2d50;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+canvas { display: block; width: 100%; height: auto; }
+
+.bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 12px; }
+
+.legend-panel {
+  background: #131929;
+  border: 1px solid #1e2d50;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.legend-title { font-size: 11px; font-weight: 700; color: #5a6a9a; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+.legend-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+.legend-swatch { width: 18px; height: 18px; border-radius: 3px; flex-shrink: 0; margin-top: 1px; }
+.legend-text { font-size: 12px; color: #9aaabb; line-height: 1.5; }
+.legend-text b { color: #e0e0f0; }
+
+.insight-panel {
+  background: #131929;
+  border: 1px solid #1e2d50;
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.insight-title { font-size: 11px; font-weight: 700; color: #5a6a9a; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+.insight-text { font-size: 12px; color: #8a9abb; line-height: 1.8; }
+.insight-text b { color: #e0e0f0; }
+.insight-text .warn { color: #e24b4a; font-weight: 700; }
+.insight-text .good { color: #4a9a6a; font-weight: 700; }
+.insight-text .neutral { color: #e8903a; font-weight: 700; }
+
+.note { font-size: 11px; color: #2e3e5a; text-align: center; line-height: 1.7; }
+.note b { color: #3e4e6a; }
+
+button {
+  width: 100%; padding: 11px 0; margin-top: 10px;
+  background: #1a2a4a; color: #7ab4f5;
+  border: 1px solid #2a3d6a; border-radius: 8px;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+}
+button:hover { background: #1e3258; }
+button:active { transform: scale(0.98); }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>SRM 세계 기후 영향 시뮬레이션</h1>
+  <p class="subtitle">성층권 에어로졸 주입(SAI) 시 전 지구 기온·강수량 변화 시각화</p>
+
+  <div class="ctrl-panel">
+    <div class="ctrl-group">
+      <div class="ctrl-label">살포 조건 설정</div>
+      <div class="ctrl">
+        <label>살포 위도</label>
+        <input type="range" class="blue" min="-60" max="60" value="45" step="5" id="sl-lat">
+        <span id="v-lat">북위 45°</span>
+      </div>
+      <div class="ctrl">
+        <label>살포량</label>
+        <input type="range" class="orange" min="1" max="20" value="8" step="1" id="sl-amt">
+        <span id="v-amt">8 Tg/yr</span>
+      </div>
+      <button id="btn-run">시뮬레이션 실행</button>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">현재 설정 의미</div>
+      <div class="var-display" id="var-display">
+        슬라이더를 조절하면 설명이 바뀝니다.
+      </div>
+    </div>
+  </div>
+
+  <div class="map-wrap">
+    <canvas id="cv" width="960" height="480"></canvas>
+  </div>
+
+  <div class="bottom-grid">
+    <div class="legend-panel">
+      <div class="legend-title">색깔이 의미하는 것</div>
+      <div class="legend-row">
+        <div class="legend-swatch" style="background:#1a4a8a"></div>
+        <div class="legend-text"><b>짙은 파랑 — 강한 냉각 + 강수량 감소</b><br>기온이 크게 낮아지지만 비가 덜 내림 → 가뭄 위험</div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-swatch" style="background:#4a9aaa"></div>
+        <div class="legend-text"><b>연한 파랑 — 약한 냉각</b><br>기온이 약간 낮아짐, 강수량 소폭 변화</div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-swatch" style="background:#888"></div>
+        <div class="legend-text"><b>회색 — 영향 거의 없음</b><br>살포 위도와 멀어 SRM 효과 미미</div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-swatch" style="background:#c04a1a"></div>
+        <div class="legend-text"><b>주황·빨강 — 몬순 교란 피해 지역</b><br>SRM으로 기온은 낮아지나 강수 패턴 왜곡 → 극단적 기상 위험</div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-swatch" style="background:#cc2222; border: 2px solid #ff4444"></div>
+        <div class="legend-text"><b>빨강 테두리 — 한반도</b><br>이번 탐구의 핵심 분석 지역</div>
+      </div>
+    </div>
+
+    <div class="insight-panel">
+      <div class="insight-title">지금 지도에서 보이는 것</div>
+      <div class="insight-text" id="insight">시뮬레이션을 실행하면 해설이 표시됩니다.</div>
+    </div>
+  </div>
+
+  <p class="note">
+    * 이정은 외(2024) 위도별 SAI 시나리오 연구 경향을 바탕으로 한 <b>개념적 시각화</b>입니다.<br>
+    실제 기후 모델(CESM2) 수치가 아니며, SRM의 지역별 영향 차이를 직관적으로 이해하기 위한 목적입니다.
+  </p>
+</div>
+
+<script>
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const W = 960, H = 480;
+
+const regions = [
+  { name: '북극', x: 370, y: 20, w: 220, h: 40, type: 'arctic' },
+  { name: '북미', x: 60, y: 80, w: 220, h: 160, type: 'northam' },
+  { name: '유럽', x: 370, y: 80, w: 150, h: 120, type: 'europe' },
+  { name: '러시아', x: 530, y: 60, w: 250, h: 130, type: 'russia' },
+  { name: '중앙아시아', x: 530, y: 190, w: 160, h: 80, type: 'centralasia' },
+  { name: '중동', x: 440, y: 200, w: 90, h: 80, type: 'mideast' },
+  { name: '중국', x: 620, y: 180, w: 150, h: 100, type: 'china' },
+  { name: '일본', x: 770, y: 170, w: 40, h: 80, type: 'japan' },
+  { name: '동남아', x: 660, y: 280, w: 140, h: 80, type: 'seasia' },
+  { name: '인도', x: 560, y: 240, w: 100, h: 110, type: 'india' },
+  { name: '아프리카', x: 350, y: 200, w: 160, h: 200, type: 'africa' },
+  { name: '남미', x: 120, y: 260, w: 160, h: 180, type: 'southam' },
+  { name: '호주', x: 680, y: 340, w: 140, h: 100, type: 'australia' },
+  { name: '남극', x: 300, y: 440, w: 360, h: 36, type: 'antarctic' },
+];
+
+const korea = { x: 745, y: 200, w: 28, h: 38 };
+
+function getEffect(type, lat, amt) {
+  const absLat = Math.abs(lat);
+  const sign = lat >= 0 ? 1 : -1;
+  const intensity = amt / 10;
+
+  switch(type) {
+    case 'arctic':
+      return lat > 30 ? { cool: 0.4*intensity, drought: 0.1, monsoon: 0 } : { cool: 0.1, drought: 0, monsoon: 0 };
+    case 'northam':
+      if (lat > 20 && lat < 60) return { cool: 0.7*intensity, drought: 0.3*intensity, monsoon: 0.1 };
+      return { cool: 0.3*intensity, drought: 0.1, monsoon: 0 };
+    case 'europe':
+      if (lat > 30 && lat < 60) return { cool: 0.8*intensity, drought: 0.2*intensity, monsoon: 0 };
+      return { cool: 0.4*intensity, drought: 0.1, monsoon: 0 };
+    case 'russia':
+      return lat > 40 ? { cool: 0.9*intensity, drought: 0.2*intensity, monsoon: 0 } : { cool: 0.4*intensity, drought: 0.1, monsoon: 0 };
+    case 'china':
+      if (lat > 20 && lat < 50) return { cool: 0.5*intensity, drought: 0.2*intensity, monsoon: 0.6*intensity };
+      return { cool: 0.3*intensity, drought: 0.1, monsoon: 0.3*intensity };
+    case 'japan':
+      return { cool: 0.4*intensity, drought: 0.15*intensity, monsoon: 0.5*intensity };
+    case 'india':
+      if (lat > 0 && lat < 30) return { cool: 0.3*intensity, drought: 0.4*intensity, monsoon: 0.8*intensity };
+      return { cool: 0.2*intensity, drought: 0.2, monsoon: 0.5*intensity };
+    case 'seasia':
+      return { cool: 0.2*intensity, drought: 0.3*intensity, monsoon: 0.9*intensity };
+    case 'africa':
+      if (lat > -20 && lat < 20) return { cool: 0.3*intensity, drought: 0.5*intensity, monsoon: 0.7*intensity };
+      return { cool: 0.2*intensity, drought: 0.2, monsoon: 0.3*intensity };
+    case 'mideast':
+      return { cool: 0.4*intensity, drought: 0.6*intensity, monsoon: 0.2 };
+    case 'centralasia':
+      return { cool: 0.5*intensity, drought: 0.4*intensity, monsoon: 0.1 };
+    case 'southam':
+      if (lat < 0) return { cool: 0.4*intensity, drought: 0.3*intensity, monsoon: 0.4*intensity };
+      return { cool: 0.2*intensity, drought: 0.2, monsoon: 0.3 };
+    case 'australia':
+      return { cool: 0.3*intensity, drought: 0.4*intensity, monsoon: 0.3*intensity };
+    case 'antarctic':
+      return lat < -30 ? { cool: 0.3*intensity, drought: 0.1, monsoon: 0 } : { cool: 0.1, drought: 0, monsoon: 0 };
+    default:
+      return { cool: 0.3*intensity, drought: 0.1, monsoon: 0 };
+  }
+}
+
+function getKoreaEffect(lat, amt) {
+  const intensity = amt / 10;
+  let monsoon = 0, cool = 0, drought = 0;
+  if (lat > 20 && lat < 60) {
+    monsoon = 0.7 * intensity;
+    cool = 0.5 * intensity;
+    drought = 0.6 * intensity;
+  } else if (lat >= 0) {
+    monsoon = 0.4 * intensity;
+    cool = 0.3 * intensity;
+    drought = 0.3 * intensity;
+  } else {
+    monsoon = 0.2 * intensity;
+    cool = 0.2 * intensity;
+    drought = 0.1 * intensity;
+  }
+  return { monsoon, cool, drought };
+}
+
+function effectToColor(eff) {
+  const { cool, drought, monsoon } = eff;
+  const total = cool + drought + monsoon;
+  if (total < 0.15) return '#4a5060';
+  if (monsoon > 0.5) {
+    const r = Math.round(160 + monsoon * 60);
+    const g = Math.round(80 - monsoon * 40);
+    const b = Math.round(30);
+    return `rgb(${r},${g},${b})`;
+  }
+  if (cool > 0.4 && drought > 0.3) {
+    return `rgb(${Math.round(30)},${Math.round(80+cool*40)},${Math.round(120+cool*60)})`;
+  }
+  if (cool > 0.3) {
+    return `rgb(${Math.round(60)},${Math.round(120+cool*50)},${Math.round(160+cool*40)})`;
+  }
+  return '#4a5060';
+}
+
+function drawLatLine(lat) {
+  const y = H/2 - (lat / 90) * (H/2);
+  ctx.strokeStyle = '#378ADD';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([8, 5]);
+  ctx.beginPath();
+  ctx.moveTo(0, y);
+  ctx.lineTo(W, y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = '#378ADD';
+  ctx.font = 'bold 12px Arial';
+  ctx.textAlign = 'left';
+  const label = lat >= 0 ? `← 살포 위도: 북위 ${lat}°` : `← 살포 위도: 남위 ${Math.abs(lat)}°`;
+  ctx.fillText(label, 8, y - 5);
+}
+
+function drawMap(lat, amt) {
+  ctx.fillStyle = '#0d1a2e';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.strokeStyle = '#1a2a3a';
+  ctx.lineWidth = 0.5;
+  for (let i = -80; i <= 80; i += 20) {
+    const y = H/2 - (i/90)*(H/2);
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    ctx.fillStyle = '#2a3a4a';
+    ctx.font = '10px Arial'; ctx.textAlign = 'left';
+    ctx.fillText((i >= 0 ? 'N' : 'S') + Math.abs(i) + '°', 4, y - 2);
+  }
+
+  regions.forEach(r => {
+    const eff = getEffect(r.type, lat, amt);
+    ctx.fillStyle = effectToColor(eff);
+    ctx.beginPath();
+    ctx.roundRect(r.x, r.y, r.w, r.h, 4);
+    ctx.fill();
+    ctx.strokeStyle = '#1a2a3a';
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font = '10px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(r.name, r.x + r.w/2, r.y + r.h/2 + 4);
+  });
+
+  const kEff = getKoreaEffect(lat, amt);
+  const kr = Math.round(180 + kEff.drought * 60);
+  const kg = Math.round(60 - kEff.drought * 40);
+  const kb = Math.round(60 - kEff.drought * 30);
+  ctx.fillStyle = `rgb(${kr},${kg},${kb})`;
+  ctx.beginPath();
+  ctx.roundRect(korea.x, korea.y, korea.w, korea.h, 3);
+  ctx.fill();
+  ctx.strokeStyle = '#ff4444';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 9px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('한반도', korea.x + korea.w/2, korea.y + korea.h/2 + 3);
+
+  drawLatLine(lat);
+
+  const rainPct = Math.round(kEff.drought * 45);
+  const tempDrop = (kEff.cool * 1.8).toFixed(1);
+  ctx.fillStyle = 'rgba(13,21,37,0.88)';
+  ctx.beginPath();
+  ctx.roundRect(korea.x + korea.w + 6, korea.y - 8, 170, 72, 6);
+  ctx.fill();
+  ctx.strokeStyle = '#ff4444';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = '#ff6666';
+  ctx.font = 'bold 11px Arial';
+  ctx.textAlign = 'left';
+  ctx.fillText('한반도 예측 영향', korea.x + korea.w + 14, korea.y + 10);
+  ctx.fillStyle = '#aabbcc';
+  ctx.font = '10px Arial';
+  ctx.fillText(`기온: -${tempDrop}°C (냉각)`, korea.x + korea.w + 14, korea.y + 26);
+  ctx.fillText(`여름 강수량: -${rainPct}% 감소`, korea.x + korea.w + 14, korea.y + 40);
+  ctx.fillStyle = rainPct > 25 ? '#e24b4a' : rainPct > 15 ? '#e8903a' : '#4a9a6a';
+  ctx.font = 'bold 10px Arial';
+  ctx.fillText(rainPct > 25 ? '가뭄 위험 높음' : rainPct > 15 ? '가뭄 위험 중간' : '영향 미미', korea.x + korea.w + 14, korea.y + 56);
+}
+
+function getLatLabel(lat) {
+  if (lat > 0) return `북위 ${lat}°`;
+  if (lat < 0) return `남위 ${Math.abs(lat)}°`;
+  return '적도(0°)';
+}
+
+function updateVarDisplay(lat, amt) {
+  const latLabel = getLatLabel(lat);
+  let latMeaning = '';
+  if (lat > 30) latMeaning = '북반구 중위도 → 아시아·유럽·북미에 직접 영향, 아시아 몬순 교란 심각';
+  else if (lat > 0) latMeaning = '북반구 저위도 → 열대수렴대 주변, 인도·동남아 몬순에 큰 영향';
+  else if (lat === 0) latMeaning = '적도 → 열대수렴대 직접 교란, 전 지구 강수 패턴 불안정';
+  else if (lat > -30) latMeaning = '남반구 저위도 → 남반구 냉각 효과, 북반구 영향 상대적으로 적음';
+  else latMeaning = '남반구 고위도 → 남극 냉각 효과, 전 지구 영향 가장 적음';
+
+  let amtMeaning = '';
+  if (amt >= 15) amtMeaning = '대량 살포 → 냉각 효과 크지만 대기 순환 교란 심각, 예측 불가능한 부작용 위험';
+  else if (amt >= 8) amtMeaning = '중간 살포 → 어느 정도 냉각, 몬순 교란 시작';
+  else amtMeaning = '소량 살포 → 냉각 효과 약함, 부작용도 상대적으로 적음';
+
+  document.getElementById('var-display').innerHTML =
+    `<b>살포 위도: ${latLabel}</b><br>${latMeaning}<br><br><b>살포량: ${amt} Tg/year</b><br>${amtMeaning}`;
+}
+
+function getInsight(lat, amt) {
+  const kEff = getKoreaEffect(lat, amt);
+  const rainPct = Math.round(kEff.drought * 45);
+  const tempDrop = (kEff.cool * 1.8).toFixed(1);
+  const latLabel = getLatLabel(lat);
+
+  let koreaWarn = rainPct > 25
+    ? `<span class="warn">가뭄 위험 높음</span> — 여름 강수량 ${rainPct}% 감소 예상`
+    : rainPct > 15
+    ? `<span class="neutral">가뭄 위험 중간</span> — 여름 강수량 ${rainPct}% 감소 예상`
+    : `<span class="good">영향 미미</span> — 강수량 변화 적음`;
+
+  let globalNote = '';
+  if (lat > 30) globalNote = '북반구 전역에 냉각 효과가 나타나지만, 아시아 몬순대(빨강)는 강수 패턴이 왜곡됩니다.';
+  else if (lat > 0) globalNote = '열대·아열대 지역의 몬순이 교란되고 아프리카·인도 강수량이 줄어듭니다.';
+  else if (lat === 0) globalDate = '적도 살포는 열대수렴대를 불안정하게 만들어 전 지구 강수 패턴을 크게 흔듭니다.';
+  else globalNote = '남반구 위주 냉각, 북반구 영향은 상대적으로 적습니다.';
+
+  return `<b>${latLabel} 살포, ${amt} Tg/year 기준</b><br><br>` +
+    `지도의 <b>파란 지역</b>은 기온이 낮아지지만 강수량도 감소해 가뭄 위험이 높아집니다.<br>` +
+    `<b>주황·빨간 지역</b>은 몬순이 교란되어 극단적 기상 현상이 발생할 수 있습니다.<br><br>` +
+    `<b style="color:#ff6666">한반도(빨간 테두리):</b> ${koreaWarn}<br>` +
+    `기온은 -${tempDrop}°C 낮아지지만 여름 장마가 약해집니다.<br><br>` +
+    globalNote;
+}
+
+function run() {
+  const lat = parseInt(document.getElementById('sl-lat').value);
+  const amt = parseInt(document.getElementById('sl-amt').value);
+  const latLabel = getLatLabel(lat);
+  document.getElementById('v-lat').textContent = latLabel;
+  document.getElementById('v-amt').textContent = amt + ' Tg/yr';
+  updateVarDisplay(lat, amt);
+  drawMap(lat, amt);
+  document.getElementById('insight').innerHTML = getInsight(lat, amt);
+}
+
+document.getElementById('sl-lat').oninput = function() {
+  const lat = parseInt(this.value);
+  document.getElementById('v-lat').textContent = getLatLabel(lat);
+};
+document.getElementById('sl-amt').oninput = function() {
+  document.getElementById('v-amt').textContent = this.value + ' Tg/yr';
+};
+document.getElementById('btn-run').onclick = run;
+run();
+</script>
+</body>
+</html>
