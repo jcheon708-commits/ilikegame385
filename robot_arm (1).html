@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>로봇 팔 시뮬레이션 — 역기구학과 토크</title>
+<style>
+  body {
+    margin: 0; padding: 20px;
+    font-family: 'Malgun Gothic', sans-serif;
+    background: #f4f6f8; color: #222;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sub { color: #667; font-size: 13px; margin-bottom: 16px; }
+  .wrap { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+  .panel {
+    background: #fff; border-radius: 12px; padding: 16px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.08);
+  }
+  canvas { display: block; cursor: crosshair; border-radius: 8px; }
+  .info { font-size: 14px; line-height: 1.9; }
+  .info b { color: #2c7fb8; }
+  .hint { font-size: 12px; color: #889; margin-top: 8px; }
+  button {
+    margin-top: 10px; padding: 8px 14px; font-size: 13px;
+    border: none; border-radius: 8px; background: #2c7fb8; color: #fff;
+    cursor: pointer;
+  }
+  button:hover { background: #246a9c; }
+</style>
+</head>
+<body>
+  <h1>삼각함수를 이용한 로봇 팔의 역기구학과 토크</h1>
+  <div class="sub">그림 위에서 마우스를 움직이면 팔이 따라옵니다 · 클릭하면 팔꿈치 위/아래 전환</div>
+
+  <div class="wrap">
+    <div class="panel">
+      <canvas id="arm" width="440" height="440"></canvas>
+      <div class="hint">빨간 별 = 목표점(마우스) · 파란선 = 위팔(링크1) · 초록선 = 아래팔(링크2)</div>
+      <button id="toggle">팔꿈치 위/아래 전환</button>
+    </div>
+    <div class="panel" style="min-width:240px; align-self:flex-start;">
+      <div class="info" id="readout" style="font-size:16px;"></div>
+      <hr style="border:none; border-top:1px solid #eee; margin:14px 0;">
+      <canvas id="torque" width="240" height="240"></canvas>
+    </div>
+  </div>
+
+<script>
+// ===== 로봇 팔 설정 =====
+const L1 = 1.0, L2 = 1.0, W = 1.0;   // 링크 길이, 무게(끝에 집중 단순화)
+let elbowUp = true;
+
+const armC = document.getElementById('arm');
+const ax = armC.getContext('2d');
+const torC = document.getElementById('torque');
+const tx = torC.getContext('2d');
+const readout = document.getElementById('readout');
+
+// 화면 좌표 <-> 수학 좌표 변환 (원점 중앙, 1단위 = 90px)
+const CX = armC.width/2, CY = armC.height/2, SCALE = 90;
+function toScreen(x, y){ return [CX + x*SCALE, CY - y*SCALE]; }
+function toMath(px, py){ return [(px - CX)/SCALE, (CY - py)/SCALE]; }
+
+// ===== 코사인 법칙 역기구학 =====
+function inverseKinematics(x, y, up){
+  const d2 = x*x + y*y, d = Math.sqrt(d2);
+  if (d > L1+L2 || d < Math.abs(L1-L2) || d === 0) return null;
+  let c = (d2 - L1*L1 - L2*L2) / (2*L1*L2);
+  c = Math.max(-1, Math.min(1, c));
+  let t2 = Math.acos(c);
+  if (!up) t2 = -t2;
+  const t1 = Math.atan2(y, x) - Math.atan2(L2*Math.sin(t2), L1 + L2*Math.cos(t2));
+  return [t1, t2];
+}
+function forwardKinematics(t1, t2){
+  const x1 = L1*Math.cos(t1), y1 = L1*Math.sin(t1);
+  const x2 = x1 + L2*Math.cos(t1+t2), y2 = y1 + L2*Math.sin(t1+t2);
+  return [[0,0],[x1,y1],[x2,y2]];
+}
+function jointTorques(t1, t2){
+  const tauE = W*L2*Math.cos(t1+t2);
+  const tauS = W*L1*Math.cos(t1) + W*(L1*Math.cos(t1) + L2*Math.cos(t1+t2));
+  return [tauS, tauE];
+}
+// 토크 크기 -> 색상 (파랑 -> 빨강 그라데이션). maxTorque 근처에서 가장 붉어짐
+const maxTorque = 4;
+function torqueColor(val){
+  const ratio = Math.min(Math.abs(val) / maxTorque, 1);
+  const r = Math.round(44  + (220-44)  * ratio);
+  const g = Math.round(127 + (38 -127) * ratio);
+  const b = Math.round(184 + (38 -184) * ratio);
+  return `rgb(${r},${g},${b})`;
+}
+
+// ===== 그리기 =====
+function drawArm(mx, my){
+  ax.clearRect(0,0,armC.width,armC.height);
+  // 격자/축
+  ax.strokeStyle = '#e3e8ec'; ax.lineWidth = 1;
+  for(let i=-2;i<=2;i++){
+    let [sx,]=toScreen(i,0); ax.beginPath(); ax.moveTo(sx,0); ax.lineTo(sx,armC.height); ax.stroke();
+    let [,sy]=toScreen(0,i); ax.beginPath(); ax.moveTo(0,sy); ax.lineTo(armC.width,sy); ax.stroke();
+  }
+  ax.strokeStyle = '#b8c0c8';
+  ax.beginPath(); ax.moveTo(0,CY); ax.lineTo(armC.width,CY); ax.stroke();
+  ax.beginPath(); ax.moveTo(CX,0); ax.lineTo(CX,armC.height); ax.stroke();
+  // 도달 범위 원
+  ax.strokeStyle = 'rgba(44,127,184,.3)'; ax.setLineDash([5,5]);
+  ax.beginPath(); ax.arc(CX,CY,(L1+L2)*SCALE,0,2*Math.PI); ax.stroke();
+  ax.setLineDash([]);
+
+  let res = null;
+  if (mx !== null){
+    const [gx,gy] = toMath(mx,my);
+    res = inverseKinematics(gx, gy, elbowUp);
+    // 목표점 별
+    drawStar(mx, my, 9, '#e8323c');
+  }
+
+  if (res === null){
+    // 어깨만
+    drawDot(CX, CY, 7, '#333');
+    readout.innerHTML = "<b>범위 밖</b><br>팔이 닿을 수 없는 위치예요.";
+    tx.clearRect(0,0,torC.width,torC.height);
+    return;
+  }
+
+  const [t1,t2] = res;
+  const pts = forwardKinematics(t1,t2).map(p => toScreen(p[0],p[1]));
+  const [ts,te] = jointTorques(t1,t2);
+
+  // 링크1 (어깨 토크 기준)
+  ax.strokeStyle = torqueColor(ts); ax.lineWidth = 7; ax.lineCap='round';
+  ax.beginPath(); ax.moveTo(pts[0][0],pts[0][1]); ax.lineTo(pts[1][0],pts[1][1]); ax.stroke();
+  // 링크2 (팔꿈치 토크 기준)
+  ax.strokeStyle = torqueColor(te);
+  ax.beginPath(); ax.moveTo(pts[1][0],pts[1][1]); ax.lineTo(pts[2][0],pts[2][1]); ax.stroke();
+  // 관절
+  drawDot(pts[0][0],pts[0][1],8,'#333');
+  drawDot(pts[1][0],pts[1][1],6,torqueColor(ts));
+  drawDot(pts[2][0],pts[2][1],6,torqueColor(te));
+
+  readout.innerHTML =
+    `θ₁ (어깨) = <b>${(t1*180/Math.PI).toFixed(1)}°</b><br>` +
+    `θ₂ (팔꿈치) = <b>${(t2*180/Math.PI).toFixed(1)}°</b><br><br>` +
+    `어깨 토크 = <b>${ts.toFixed(2)}</b><br>` +
+    `팔꿈치 토크 = <b>${te.toFixed(2)}</b><br>` +
+    `<span style="font-size:12px;color:#889;">T = W·L·cos θ</span>`;
+  drawTorque(ts, te);
+}
+
+function drawTorque(ts, te){
+  tx.clearRect(0,0,torC.width,torC.height);
+  const vals = [Math.abs(ts), Math.abs(te)];
+  const labels = ['어깨','팔꿈치'];
+  const maxV = 4, baseY = 200, bw = 60, gap = 50, x0 = 40;
+  // 축
+  tx.strokeStyle = '#ccc'; tx.beginPath(); tx.moveTo(20,baseY); tx.lineTo(220,baseY); tx.stroke();
+  vals.forEach((v,i)=>{
+    const h = (v/maxV)*160;
+    const x = x0 + i*(bw+gap);
+    tx.fillStyle = torqueColor(v);
+    tx.fillRect(x, baseY-h, bw, h);
+    tx.fillStyle = '#222'; tx.font='bold 13px sans-serif'; tx.textAlign='center';
+    tx.fillText(v.toFixed(2), x+bw/2, baseY-h-6);
+    tx.fillStyle='#556'; tx.font='12px sans-serif';
+    tx.fillText(labels[i], x+bw/2, baseY+16);
+  });
+  tx.fillStyle='#556'; tx.font='12px sans-serif'; tx.textAlign='left';
+  tx.fillText('관절 토크 (색이 붉을수록 부하 큼)', 20, 20);
+}
+
+function drawDot(x,y,r,c){ ax.fillStyle=c; ax.beginPath(); ax.arc(x,y,r,0,2*Math.PI); ax.fill(); }
+function drawStar(cx,cy,r,c){
+  ax.fillStyle=c; ax.beginPath();
+  for(let i=0;i<10;i++){
+    const rad=(i%2===0)?r:r/2, a=Math.PI/5*i - Math.PI/2;
+    const x=cx+rad*Math.cos(a), y=cy+rad*Math.sin(a);
+    i===0?ax.moveTo(x,y):ax.lineTo(x,y);
+  }
+  ax.closePath(); ax.fill();
+}
+
+// ===== 마우스 이벤트 =====
+let last = [toScreen(1,1)[0], toScreen(1,1)[1]];
+armC.addEventListener('mousemove', e=>{
+  const r = armC.getBoundingClientRect();
+  last = [e.clientX - r.left, e.clientY - r.top];
+  drawArm(last[0], last[1]);
+});
+armC.addEventListener('click', ()=>{ elbowUp = !elbowUp; drawArm(last[0], last[1]); });
+document.getElementById('toggle').addEventListener('click', ()=>{
+  elbowUp = !elbowUp; drawArm(last[0], last[1]);
+});
+
+// 시작 화면 (목표점 1,1)
+const [sx,sy] = toScreen(1,1);
+drawArm(sx, sy);
+</script>
+</body>
+</html>
