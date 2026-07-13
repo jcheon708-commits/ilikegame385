@@ -1,0 +1,485 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.w{padding:1rem 0;color:var(--text-primary);font-family:var(--font-sans)}
+.wtitle{font-size:15px;font-weight:500;margin-bottom:4px}
+.wsub{font-size:13px;color:var(--text-secondary);margin-bottom:1.5rem}
+.sc-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1.5rem}
+.sb{padding:6px 14px;font-size:13px;border:0.5px solid var(--border-strong);border-radius:var(--radius);background:var(--surface-2);color:var(--text-primary);cursor:pointer;transition:background .15s}
+.sb:hover{background:var(--surface-1)}
+.sb.on{background:var(--bg-accent);color:var(--text-accent);border-color:var(--border-accent)}
+.sb.rd.on{background:var(--bg-danger);color:var(--text-danger);border-color:var(--border-danger)}
+.sb.gn.on{background:var(--bg-success);color:var(--text-success);border-color:var(--border-success)}
+.sb.wr.on{background:var(--bg-warning);color:var(--text-warning);border-color:var(--border-warning)}
+.panels{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem}
+.pcard{background:var(--surface-1);border:0.5px solid var(--border);border-radius:12px;padding:1rem}
+.plabel{font-size:12px;color:var(--text-secondary);margin-bottom:2px}
+.pval{font-size:26px;font-weight:500}
+.pdelta{font-size:13px;margin-top:2px}
+.dup{color:var(--text-success)}.ddn{color:var(--text-danger)}.dne{color:var(--text-secondary)}
+.sl-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem}
+.slbox{background:var(--surface-1);border:0.5px solid var(--border);border-radius:12px;padding:1rem}
+.slh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.sln{font-size:13px;font-weight:500}
+.slv{font-size:13px;color:var(--text-secondary)}
+.sld{font-size:11px;color:var(--text-muted);margin-bottom:8px}
+input[type=range]{width:100%}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:99px;margin-top:6px}
+.ba{background:var(--bg-warning);color:var(--text-warning)}
+.bb{background:var(--bg-accent);color:var(--text-accent)}
+.bn{background:var(--bg-success);color:var(--text-success)}
+.chart-wrap{background:var(--surface-1);border:0.5px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1.5rem}
+.chart-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.cht{font-size:13px;font-weight:500}
+.leg{display:flex;gap:12px;flex-wrap:wrap}
+.li{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text-secondary)}
+.ld{width:10px;height:10px;border-radius:2px}
+.cw{position:relative;width:100%;height:240px}
+.insight{background:var(--surface-1);border:0.5px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1.5rem}
+.ititle{font-size:13px;font-weight:500;margin-bottom:6px}
+.itext{font-size:13px;color:var(--text-secondary);line-height:1.6}
+.eq{background:var(--surface-0);border:0.5px solid var(--border);border-radius:var(--radius);padding:10px 14px;font-family:var(--font-mono);font-size:13px;margin:8px 0;color:var(--text-primary)}
+.eqa{color:var(--text-accent)}.eqb{color:var(--text-danger)}
+.scrow{display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:12px;color:var(--text-secondary)}
+.scd{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.talert{background:var(--bg-danger);border:0.5px solid var(--border-danger);border-radius:var(--radius);padding:8px 12px;font-size:13px;color:var(--text-danger);margin-bottom:1rem;display:none}
+.hist{background:var(--surface-1);border:0.5px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1.5rem}
+.htitle{font-size:13px;font-weight:500;margin-bottom:8px}
+.hlist{font-size:12px;color:var(--text-secondary);max-height:90px;overflow-y:auto}
+.hi{padding:3px 0;border-bottom:0.5px solid var(--border)}
+
+/* earth section */
+.earth-section{background:var(--surface-1);border:0.5px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1.5rem}
+.earth-section-title{font-size:13px;font-weight:500;margin-bottom:12px}
+.earth-inner{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start}
+.earth-svg-wrap{display:flex;flex-direction:column;align-items:center;gap:6px}
+.earth-name{font-size:13px;font-weight:500;text-align:center}
+.earth-tc{font-size:12px;color:var(--text-secondary);text-align:center}
+.earth-desc-text{font-size:12px;color:var(--text-secondary);line-height:1.6;margin-bottom:12px}
+.stat-item{margin-bottom:10px}
+.stat-label{font-size:12px;color:var(--text-secondary);margin-bottom:3px}
+.stat-bar-wrap{height:6px;background:var(--surface-0);border-radius:99px;overflow:hidden;margin-bottom:2px}
+.stat-bar{height:100%;border-radius:99px;transition:width .5s ease}
+.stat-val{font-size:11px;color:var(--text-primary)}
+.earth-leg{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+.el{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-secondary)}
+.elsq{width:10px;height:10px;border-radius:2px}
+</style>
+
+<div class="w">
+<h2 class="sr-only">아스트로파지형 기후위기 복사평형 시뮬레이터 — 변수 조작, 온도 추이 그래프, 지구 시각화 통합</h2>
+<p class="wtitle">아스트로파지형 기후위기 복사평형 시뮬레이터</p>
+<p class="wsub">슬라이더로 변수를 직접 조작하거나, 시나리오 버튼으로 소설·지구 역사·기술 개입 상황을 비교해보세요</p>
+
+<div class="sc-row">
+  <button class="sb on" id="b-base" onclick="applyS('base')">기준 지구</button>
+  <button class="sb rd" id="b-astro" onclick="applyS('astro')">아스트로파지 발생</button>
+  <button class="sb rd" id="b-astro2" onclick="applyS('astro2')">아스트로파지 심화</button>
+  <button class="sb" id="b-ordov" onclick="applyS('ordov')">오르도비스기 말</button>
+  <button class="sb gn" id="b-nano" onclick="applyS('nano')">나노입자 개입</button>
+  <button class="sb rd" id="b-term" onclick="applyS('term')">개입 중단</button>
+  <button class="sb wr" id="b-vol" onclick="applyS('vol')">화산 폭발</button>
+  <button class="sb wr" id="b-gh" onclick="applyS('gh')">온실가스 급증</button>
+</div>
+
+<div id="talert" class="talert">⚠ termination shock — 나노입자 살포 중단으로 억눌려 있던 한랭화가 즉시 노출됩니다.</div>
+
+<div class="panels">
+  <div class="pcard"><div class="plabel">평형 온도 T</div><div class="pval" id="tv">—</div><div class="pdelta" id="td"></div></div>
+  <div class="pcard"><div class="plabel">기준 대비 변화</div><div class="pval" id="dv">—</div><div class="pdelta" id="ap"></div></div>
+  <div class="pcard"><div class="plabel">유입 에너지 (W/m²)</div><div class="pval" id="ev">—</div><div class="pdelta" style="font-size:12px;color:var(--text-secondary)">S(1−α)/4</div></div>
+  <div class="pcard"><div class="plabel">유출 에너지 (W/m²)</div><div class="pval" id="ov">—</div><div class="pdelta" style="font-size:12px;color:var(--text-secondary)">ε·σ·T⁴</div></div>
+</div>
+
+<div class="sl-grid">
+  <div class="slbox">
+    <div class="slh"><span class="sln">태양상수 S (W/m²)</span><span class="slv" id="ls">1361</span></div>
+    <p class="sld">태양이 방출하는 에너지량. 아스트로파지가 줄임</p>
+    <input type="range" id="sS" min="800" max="1500" step="1" value="1361" oninput="onSl()">
+    <span class="badge ba">경로 A 변수</span>
+  </div>
+  <div class="slbox">
+    <div class="slh"><span class="sln">알베도 α</span><span class="slv" id="la">0.30</span></div>
+    <p class="sld">지구 반사율. 화산·에어로졸·나노입자로 변화</p>
+    <input type="range" id="sA" min="0.01" max="0.80" step="0.01" value="0.30" oninput="onSl()">
+    <span class="badge ba">경로 A 변수</span>
+  </div>
+  <div class="slbox">
+    <div class="slh"><span class="sln">유효 방출률 ε</span><span class="slv" id="le">0.612</span></div>
+    <p class="sld">온실가스가 열을 가두는 정도. 낮을수록 온난화</p>
+    <input type="range" id="sE" min="0.30" max="1.00" step="0.001" value="0.612" oninput="onSl()">
+    <span class="badge bb">경로 B 변수</span>
+  </div>
+  <div class="slbox">
+    <div class="slh"><span class="sln">나노입자 보정 ΔS</span><span class="slv" id="ln">+0</span></div>
+    <p class="sld">나노입자 전방산란으로 늘어나는 유효 유입량</p>
+    <input type="range" id="sN" min="0" max="200" step="1" value="0" oninput="onSl()">
+    <span class="badge bn">기술 개입 변수</span>
+  </div>
+</div>
+
+<div class="chart-wrap">
+  <div class="chart-head">
+    <span class="cht">변수 변화에 따른 평형온도 추이</span>
+    <div class="leg">
+      <div class="li"><div class="ld" style="background:#2a78d6"></div>현재 온도</div>
+      <div class="li"><div class="ld" style="background:#e24b4a"></div>기준 288K</div>
+      <div class="li"><div class="ld" style="background:#1baf7a"></div>빙점 273K</div>
+    </div>
+  </div>
+  <div class="cw"><canvas id="mc" role="img" aria-label="복사평형 온도 변화 추이"></canvas></div>
+</div>
+
+<div class="insight">
+  <p class="ititle">현재 상태 해석</p>
+  <div class="eq" id="eqd">T = [ S(1−α) / (4εσ) ]^(1/4)</div>
+  <p class="itext" id="itxt">기준 지구 상태입니다. 슬라이더를 조작하거나 시나리오를 선택하세요.</p>
+  <div style="margin-top:10px" id="scmp"></div>
+</div>
+
+<!-- EARTH VISUALIZATION -->
+<div class="earth-section">
+  <p class="earth-section-title">현재 시나리오의 지구 상태</p>
+  <div class="earth-inner">
+    <div class="earth-svg-wrap">
+      <svg id="esvg" viewBox="-110 -110 220 220" width="200" height="200" style="overflow:visible">
+        <defs>
+          <clipPath id="ec"><circle cx="0" cy="0" r="90"/></clipPath>
+          <radialGradient id="ag" cx="40%" cy="35%">
+            <stop offset="0%" id="as0" stop-color="#89c4ff" stop-opacity="0"/>
+            <stop offset="60%" id="as1" stop-color="#89c4ff" stop-opacity="0.08"/>
+            <stop offset="100%" id="as2" stop-color="#4a90d9" stop-opacity="0.28"/>
+          </radialGradient>
+          <radialGradient id="sg" cx="35%" cy="30%">
+            <stop offset="0%" stop-color="#fff" stop-opacity="0.18"/>
+            <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <circle id="oc" cx="0" cy="0" r="90" fill="#1a6fa0"/>
+        <g clip-path="url(#ec)" id="cg">
+          <ellipse cx="-28" cy="-18" rx="22" ry="28" id="c1" fill="#4a7c2f"/>
+          <ellipse cx="-18" cy="8" rx="12" ry="16" id="c1b" fill="#4a7c2f"/>
+          <ellipse cx="-18" cy="38" rx="13" ry="22" id="c2" fill="#5a8a38"/>
+          <ellipse cx="14" cy="-10" rx="12" ry="20" id="c3" fill="#4a7c2f"/>
+          <ellipse cx="18" cy="22" rx="16" ry="30" id="c4" fill="#7a9a40"/>
+          <ellipse cx="42" cy="-20" rx="32" ry="22" id="c5" fill="#4a7c2f"/>
+          <ellipse cx="55" cy="2" rx="20" ry="16" id="c5b" fill="#4a7c2f"/>
+          <ellipse cx="52" cy="38" rx="14" ry="10" id="c6" fill="#8a7a38"/>
+          <ellipse cx="0" cy="82" rx="90" ry="30" id="ant" fill="#ddeeff"/>
+        </g>
+        <ellipse id="icen" cx="0" cy="-78" rx="50" ry="20" fill="#ddeeff" clip-path="url(#ec)"/>
+        <circle cx="0" cy="0" r="98" fill="url(#ag)" id="ar"/>
+        <circle cx="0" cy="0" r="90" fill="url(#sg)"/>
+        <circle cx="0" cy="0" r="90" fill="none" stroke="#fff" stroke-opacity="0.2" stroke-width="1"/>
+        <g id="sfx" opacity="0" clip-path="url(#ec)">
+          <rect x="-90" y="-90" width="180" height="180" fill="#200a00" opacity="0.5"/>
+        </g>
+        <g id="nfx" opacity="0" clip-path="url(#ec)">
+          <circle cx="0" cy="0" r="90" fill="none" stroke="#1baf7a" stroke-width="4"/>
+        </g>
+        <text id="etl" x="0" y="6" text-anchor="middle" font-size="16" font-weight="500" fill="#fff" style="filter:drop-shadow(0 1px 2px #000)"></text>
+      </svg>
+      <div class="earth-name" id="ename">기준 지구</div>
+      <div class="earth-tc" id="etc">288K / 15°C</div>
+    </div>
+    <div>
+      <p class="earth-desc-text" id="edesc">현재 지구와 같은 상태. 극지 빙하, 온대 식생, 안정된 대기가 유지됩니다.</p>
+      <div class="stat-item">
+        <div class="stat-label">극지 빙하 면적</div>
+        <div class="stat-bar-wrap"><div class="stat-bar" id="bice" style="background:#89c4ff;width:30%"></div></div>
+        <div class="stat-val" id="vice">30% — 현재 수준</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">해수면 변화</div>
+        <div class="stat-bar-wrap"><div class="stat-bar" id="bsea" style="background:#1a6fa0;width:50%"></div></div>
+        <div class="stat-val" id="vsea">기준 (0m)</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">태양광 도달률</div>
+        <div class="stat-bar-wrap"><div class="stat-bar" id="batm" style="background:#4a90d9;width:70%"></div></div>
+        <div class="stat-val" id="vatm">70%</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">식생 피복률</div>
+        <div class="stat-bar-wrap"><div class="stat-bar" id="bveg" style="background:#4a7c2f;width:55%"></div></div>
+        <div class="stat-val" id="vveg">55% — 온대 식생</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">아스트로파지 위협도</div>
+        <div class="stat-bar-wrap"><div class="stat-bar" id="baf" style="background:#e24b4a;width:0%"></div></div>
+        <div class="stat-val" id="vaf">없음</div>
+      </div>
+      <div class="earth-leg">
+        <div class="el"><div class="elsq" style="background:#1a6fa0"></div>해양</div>
+        <div class="el"><div class="elsq" style="background:#4a7c2f"></div>식생</div>
+        <div class="el"><div class="elsq" style="background:#8a7a38"></div>건조</div>
+        <div class="el"><div class="elsq" style="background:#ddeeff"></div>빙하</div>
+        <div class="el"><div class="elsq" style="background:#89c4ff"></div>대기</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="hist">
+  <p class="htitle">탐구 기록</p>
+  <div class="hlist" id="hl"><p style="color:var(--text-muted);font-size:12px">시나리오를 바꾸면 여기에 기록됩니다</p></div>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const SIG=5.67e-8;
+const BASE={S:1361,A:.30,E:.612,N:0};
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const lerp=(a,b,t)=>a+(b-a)*clamp(t,0,1);
+
+const SC={
+  base: {S:1361,A:.30,E:.612,N:0,label:"기준 지구",path:"기준",color:"#2a78d6",
+    desc:"현재 지구와 같은 상태. 극지 빙하, 온대 식생, 안정된 대기가 유지됩니다.",af:0},
+  astro:{S:1100,A:.30,E:.612,N:0,label:"아스트로파지 발생",path:"경로 A",color:"#e24b4a",
+    desc:"아스트로파지가 태양에서 증식해 S가 1100으로 감소. 경로 A 한랭화가 시작됩니다.",af:.5},
+  astro2:{S:900,A:.30,E:.612,N:0,label:"아스트로파지 심화",path:"경로 A",color:"#a32d2d",
+    desc:"S=900까지 하락. 고위도부터 빙하가 급속 확대되고 식생이 후퇴합니다.",af:.9},
+  ordov:{S:1361,A:.30,E:.82,N:0,label:"오르도비스기 말",path:"경로 B",color:"#4a3aa7",
+    desc:"CO₂ 급감으로 ε 증가. 유입량은 동일하지만 경로 B 한랭화 — 히르난티기 빙하기.",af:0},
+  nano:{S:1100,A:.22,E:.612,N:80,label:"나노입자 개입",path:"기술 개입",color:"#1baf7a",
+    desc:"나노막대 살포로 α 감소·ΔS=+80. 아스트로파지 상황에서 온도가 기준 수준으로 회복.",af:.3},
+  term:{S:1100,A:.30,E:.612,N:0,label:"개입 중단 (termination shock)",path:"경로 A",color:"#eb6834",
+    desc:"살포 중단. 억눌려 있던 아스트로파지 한랭화가 즉시 노출 — termination shock.",af:.5},
+  vol:{S:1361,A:.40,E:.612,N:0,label:"화산 폭발 (자연 SRM)",path:"경로 A",color:"#888780",
+    desc:"화산 에어로졸로 α=0.40으로 상승. 경로 A 냉각 — 피나투보 화산(1991) 실제 사례.",af:0},
+  gh:{S:1361,A:.30,E:.50,N:0,label:"온실가스 급증",path:"경로 B",color:"#eda100",
+    desc:"ε 감소(0.612→0.50)로 열이 더 오래 갇힘. 경로 B 온난화. 현재 기후변화 방향.",af:0},
+};
+
+function calcT(o){
+  const effS=o.S+o.N;
+  const Ein=effS*(1-o.A)/4;
+  const T=Math.pow(Ein/(o.E*SIG),.25);
+  return{T,Ein,Eout:o.E*SIG*Math.pow(T,4)};
+}
+
+let history=[], chart=null, chartData=[];
+let curS=1361,curA=.30,curE=.612,curN=0,curKey='base';
+
+function onSl(){
+  curS=parseFloat(document.getElementById('sS').value);
+  curA=parseFloat(document.getElementById('sA').value);
+  curE=parseFloat(document.getElementById('sE').value);
+  curN=parseFloat(document.getElementById('sN').value);
+  document.getElementById('ls').textContent=Math.round(curS);
+  document.getElementById('la').textContent=curA.toFixed(2);
+  document.getElementById('le').textContent=curE.toFixed(3);
+  document.getElementById('ln').textContent='+'+Math.round(curN);
+  deact(); curKey=null;
+  updateAll(curS,curA,curE,curN,null);
+}
+
+function applyS(key){
+  curKey=key; const sc=SC[key];
+  curS=sc.S;curA=sc.A;curE=sc.E;curN=sc.N;
+  setSl(curS,curA,curE,curN);
+  deact();
+  const b=document.getElementById('b-'+key);
+  if(b)b.classList.add('on');
+  document.getElementById('talert').style.display=key==='term'?'block':'none';
+  updateAll(curS,curA,curE,curN,key);
+}
+
+function setSl(S,A,E,N){
+  document.getElementById('sS').value=S;
+  document.getElementById('sA').value=A;
+  document.getElementById('sE').value=E;
+  document.getElementById('sN').value=N;
+  document.getElementById('ls').textContent=Math.round(S);
+  document.getElementById('la').textContent=A.toFixed(2);
+  document.getElementById('le').textContent=E.toFixed(3);
+  document.getElementById('ln').textContent='+'+Math.round(N);
+}
+function deact(){document.querySelectorAll('.sb').forEach(b=>b.classList.remove('on'));}
+
+function updateAll(S,A,E,N,key){
+  const{T,Ein,Eout}=calcT({S,A,E,N});
+  const base=calcT(BASE);
+  const delta=T-base.T;
+  const Tk=Math.round(T);
+  const Tc=(T-273.15).toFixed(1);
+  const ds=(delta>=0?'+':'')+delta.toFixed(1);
+
+  document.getElementById('tv').textContent=Tk+' K ('+Tc+'°C)';
+  document.getElementById('ev').textContent=Ein.toFixed(1);
+  document.getElementById('ov').textContent=Eout.toFixed(1);
+
+  const dv=document.getElementById('dv');
+  dv.textContent=ds+' K';
+  dv.className='pval '+(delta<-2?'ddn':delta>2?'dup':'dne');
+  const td=document.getElementById('td');
+  td.textContent=Math.abs(delta)>.5?(delta<0?'기준 대비 한랭화':'기준 대비 온난화'):'기준 상태';
+  td.className='pdelta '+(delta<0?'ddn':delta>0?'dup':'dne');
+
+  const ap=document.getElementById('ap');
+  const sc=key?SC[key]:null;
+  if(sc){
+    const cls=sc.path==='경로 A'?'badge ba':sc.path==='경로 B'?'badge bb':'badge bn';
+    ap.innerHTML='<span class="'+cls+'">'+sc.path+'</span>';
+  } else ap.innerHTML='<span class="badge bn">수동 조작</span>';
+
+  updateInsight(S,A,E,N,T,delta,key);
+  updateChart(T);
+  updateEarth(T,S,A,E,N,key);
+  addHist(S,A,E,N,T,delta,key);
+}
+
+function updateInsight(S,A,E,N,T,delta,key){
+  const effS=S+N;
+  document.getElementById('eqd').innerHTML=
+    'T = [ <span class="eqa">('+Math.round(effS)+')(1 − '+A.toFixed(2)+')</span> / (4 × <span class="eqb">'+E.toFixed(3)+'</span> × σ) ]^(1/4) = <strong>'+Math.round(T)+' K</strong>';
+  const txt=document.getElementById('itxt');
+  const cmp=document.getElementById('scmp');
+  cmp.innerHTML='';
+  if(!key||key==='base'){
+    txt.textContent='기준 지구 상태입니다. S=1361, α=0.30, ε=0.612일 때 평형 온도는 약 288K(15°C)로 현실 지구와 일치합니다.';
+  } else if(key==='astro'){
+    txt.textContent='아스트로파지가 태양 표면에서 증식해 S가 1361→1100으로 감소한 상황입니다. 경로 A(유입량 감소)에 해당합니다. 온도는 '+Math.abs(delta).toFixed(1)+'K 하강합니다.';
+    addCmp(cmp);
+  } else if(key==='astro2'){
+    txt.textContent='아스트로파지 극단 심화 시나리오. S=900으로 기준 대비 '+Math.abs(delta).toFixed(1)+'K 하강합니다. 스노볼 지구 전 단계에 해당합니다.';
+    addCmp(cmp);
+  } else if(key==='ordov'){
+    txt.textContent='오르도비스기 말, CO₂ 급감으로 ε이 0.82로 상승. S와 α는 변하지 않았지만 경로 B 한랭화로 동일한 온도 하강이 발생합니다. 아스트로파지 상황과 원인이 다릅니다.';
+    addCmp(cmp);
+  } else if(key==='nano'){
+    txt.textContent='아스트로파지(S=1100) 상황에서 나노막대 살포로 α=0.22, ΔS=+80을 확보. 온도가 기준과 유사하게 회복됩니다. 단, 지속적 살포에 의존합니다.';
+    addCmp(cmp);
+  } else if(key==='term'){
+    txt.textContent='나노입자 살포 중단. S는 여전히 1100이고 기술 보정이 사라졌습니다. 억눌려 있던 한랭화가 그대로 노출되는 termination shock입니다.';
+    addCmp(cmp);
+  } else if(key==='vol'){
+    txt.textContent='화산 에어로졸로 α=0.40. 경로 A이지만 S 감소가 아닌 α 증가로 인한 냉각입니다. KISTEP 브리프의 SRM 기술과 원리가 동일합니다.';
+  } else if(key==='gh'){
+    txt.textContent='온실가스 누적으로 ε=0.50(열이 더 오래 갇힘). 경로 B 온난화. SRM은 이 상황을 상쇄하기 위해 α를 높이는 방향으로 작동합니다.';
+  }
+}
+
+function addCmp(cmp){
+  const rows=[{key:'astro',label:'아스트로파지 발생'},{key:'ordov',label:'오르도비스기 말'},{key:'nano',label:'나노입자 개입'},{key:'term',label:'개입 중단'}];
+  let h='<div style="margin-top:8px;font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:4px">주요 시나리오 비교</div>';
+  rows.forEach(r=>{
+    const sc=SC[r.key];
+    const{T}=calcT(sc);
+    const d=T-288.15;
+    h+='<div class="scrow"><div class="scd" style="background:'+sc.color+'"></div>'+r.label+' — '+Math.round(T)+'K ('+(d>=0?'+':'')+d.toFixed(1)+'K)</div>';
+  });
+  cmp.innerHTML=h;
+}
+
+function addHist(S,A,E,N,T,delta,key){
+  const label=key?SC[key].label:'수동 조작';
+  history.unshift(label+' → '+Math.round(T)+'K ('+(delta>=0?'+':'')+delta.toFixed(1)+'K)');
+  if(history.length>12)history.pop();
+  document.getElementById('hl').innerHTML=history.map(e=>'<div class="hi">'+e+'</div>').join('');
+}
+
+function updateChart(T){
+  chartData.push(Math.round(T*10)/10);
+  if(chartData.length>30)chartData.shift();
+  if(!chart){
+    chart=new Chart(document.getElementById('mc').getContext('2d'),{
+      type:'line',
+      data:{
+        labels:chartData.map((_,i)=>i+1),
+        datasets:[
+          {label:'평형 온도',data:[...chartData],borderColor:'#2a78d6',borderWidth:2,pointRadius:3,pointBackgroundColor:'#2a78d6',fill:false,tension:.3},
+          {label:'기준 288K',data:Array(30).fill(288),borderColor:'#e24b4a',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false},
+          {label:'빙점 273K',data:Array(30).fill(273),borderColor:'#1baf7a',borderWidth:1,borderDash:[2,4],pointRadius:0,fill:false},
+        ]
+      },
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{display:false},y:{min:240,max:315,ticks:{color:'#898781',font:{size:12},callback:v=>v+'K'},grid:{color:'#e1e0d9'}}},animation:{duration:300}}
+    });
+  } else {
+    chart.data.labels=chartData.map((_,i)=>i+1);
+    chart.data.datasets[0].data=[...chartData];
+    chart.update();
+  }
+}
+
+/* ── EARTH RENDERER ── */
+function updateEarth(T,S,A,E,N,key){
+  const sc=key?SC[key]:null;
+  const afLvl=sc?sc.af:clamp((1361-S)/500,0,1);
+  const isNano=key==='nano';
+  const isFrz=T<260, isSnow=T<240, isHot=T>296;
+
+  /* ocean */
+  document.getElementById('oc').setAttribute('fill',
+    isSnow?'#091520':isFrz?'#0d3a5a':isHot?'#2a8ac0':'#1a6fa0');
+
+  /* continents */
+  const veg=isSnow?'#1a2a10':isFrz?'#2a4a18':isHot?'#8aaa38':'#4a7c2f';
+  const des=isSnow?'#2a2a18':isHot?'#c8a848':'#8a7a38';
+  ['c1','c1b','c2','c3','c5','c5b'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.setAttribute('fill',veg);
+  });
+  const c4=document.getElementById('c4');
+  const c6=document.getElementById('c6');
+  if(c4) c4.setAttribute('fill',isSnow?'#1a1a08':isHot?des:'#7a9a40');
+  if(c6) c6.setAttribute('fill',des);
+
+  /* ice */
+  const icen=document.getElementById('icen');
+  const ant=document.getElementById('ant');
+  const iry=isSnow?90:isFrz?lerp(25,70,(260-T)/20):isHot?6:20;
+  const irx=isSnow?90:isFrz?lerp(45,88,(260-T)/20):isHot?20:50;
+  icen.setAttribute('ry',iry.toFixed(1)); icen.setAttribute('rx',irx.toFixed(1));
+  icen.setAttribute('cy',isSnow?'-10':'-78');
+  const ary=isSnow?90:isFrz?lerp(32,65,(260-T)/20):isHot?14:30;
+  ant.setAttribute('ry',ary.toFixed(1));
+  ant.setAttribute('cy',isSnow?'10':'82');
+
+  /* atmosphere */
+  const a0=document.getElementById('as0'),a1=document.getElementById('as1'),a2=document.getElementById('as2');
+  if(afLvl>.3){a0.setAttribute('stop-color','#3a1800');a1.setAttribute('stop-color','#5a2800');a2.setAttribute('stop-color','#2a1000');}
+  else if(isHot){a0.setAttribute('stop-color','#ffd080');a1.setAttribute('stop-color','#e8a020');a2.setAttribute('stop-color','#c06000');}
+  else if(isFrz){a0.setAttribute('stop-color','#c0d8f0');a1.setAttribute('stop-color','#a0c0e0');a2.setAttribute('stop-color','#608ab0');}
+  else{a0.setAttribute('stop-color','#89c4ff');a1.setAttribute('stop-color','#89c4ff');a2.setAttribute('stop-color','#4a90d9');}
+  a2.setAttribute('stop-opacity',isHot?'0.45':isSnow?'0.12':'0.28');
+
+  /* astrofage overlay */
+  document.getElementById('sfx').setAttribute('opacity',(afLvl*.6).toFixed(2));
+  /* nano ring */
+  document.getElementById('nfx').setAttribute('opacity',isNano?'1':'0');
+
+  /* center label */
+  document.getElementById('etl').textContent=Math.round(T)+'K';
+
+  /* info text */
+  document.getElementById('ename').textContent=sc?sc.label:'수동 조작';
+  document.getElementById('etc').textContent=Math.round(T)+'K / '+(T-273.15).toFixed(1)+'°C';
+  document.getElementById('edesc').textContent=sc?sc.desc:
+    (isSnow?'극단적 한랭화. 전면 빙하 상태입니다.':isFrz?'심각한 한랭화. 빙하가 급속 확장됩니다.':isHot?'온난화. 극지 빙하가 축소됩니다.':'기준 지구와 유사한 상태입니다.');
+
+  /* stats */
+  const iceP=isSnow?98:isFrz?Math.round(lerp(40,90,(260-T)/20)):isHot?12:30;
+  document.getElementById('bice').style.width=iceP+'%';
+  document.getElementById('vice').textContent=iceP+'% — '+(isSnow?'전면 동결':isFrz?'급속 확대':isHot?'축소':' 현재 수준');
+
+  const seaD=isSnow?-130:isFrz?Math.round(lerp(-20,-120,(260-T)/20)):isHot?+35:0;
+  document.getElementById('bsea').style.width=clamp(50+seaD/3,5,90)+'%';
+  document.getElementById('vsea').textContent=(seaD>=0?'+':'')+seaD+'m — '+(seaD<-50?'대륙붕 노출':seaD>20?'해안선 침수':'기준');
+
+  const atmP=Math.round(clamp(S/1361*70,25,80));
+  document.getElementById('batm').style.width=atmP+'%';
+  document.getElementById('vatm').textContent=atmP+'% (S='+Math.round(S)+' W/m²)';
+
+  const vegP=isSnow?2:isFrz?Math.round(lerp(18,4,(260-T)/20)):isHot?68:55;
+  document.getElementById('bveg').style.width=vegP+'%';
+  document.getElementById('bveg').style.background=vegP<15?'#8a7a38':'#4a7c2f';
+  document.getElementById('vveg').textContent=vegP+'% — '+(isSnow?'거의 소멸':isFrz?'한랭 후퇴':isHot?'열대화 확장':'온대 식생');
+
+  const afP=Math.round(afLvl*100);
+  document.getElementById('baf').style.width=afP+'%';
+  document.getElementById('vaf').textContent=afP>0?afP+'% (S='+Math.round(S)+', −'+Math.round(1361-S)+' W/m²)':'없음';
+}
+
+applyS('base');
+</script>
