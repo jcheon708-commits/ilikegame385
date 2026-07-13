@@ -1,0 +1,394 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans)}
+.sim-wrap{padding:1rem 0;color:var(--text-primary)}
+.sim-title{font-size:15px;font-weight:500;margin-bottom:4px}
+.sim-sub{font-size:13px;color:var(--text-secondary);margin-bottom:1.5rem}
+.scenarios{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1.5rem}
+.sc-btn{padding:6px 14px;font-size:13px;border:0.5px solid var(--border-strong);border-radius:var(--radius);background:var(--surface-2);color:var(--text-primary);cursor:pointer;transition:background 0.15s}
+.sc-btn:hover{background:var(--surface-1)}
+.sc-btn.active{background:var(--bg-accent);color:var(--text-accent);border-color:var(--border-accent)}
+.sc-btn.danger.active{background:var(--bg-danger);color:var(--text-danger);border-color:var(--border-danger)}
+.sc-btn.success.active{background:var(--bg-success);color:var(--text-success);border-color:var(--border-success)}
+.sc-btn.warning.active{background:var(--bg-warning);color:var(--text-warning);border-color:var(--border-warning)}
+.panels{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem}
+.panel{background:var(--surface-1);border:0.5px solid var(--border);border-radius:12px;padding:1rem}
+.panel-label{font-size:12px;color:var(--text-secondary);margin-bottom:2px}
+.panel-val{font-size:26px;font-weight:500}
+.panel-delta{font-size:13px;margin-top:2px}
+.delta-up{color:var(--text-success)}
+.delta-dn{color:var(--text-danger)}
+.delta-neu{color:var(--text-secondary)}
+.sliders-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1.5rem}
+.slider-box{background:var(--surface-1);border:0.5px solid var(--border);border-radius:12px;padding:1rem}
+.slider-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+.slider-name{font-size:13px;font-weight:500}
+.slider-val{font-size:13px;color:var(--text-secondary)}
+.slider-desc{font-size:11px;color:var(--text-muted);margin-bottom:8px}
+input[type=range]{width:100%}
+.path-badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:99px;margin-top:6px}
+.badge-a{background:var(--bg-warning);color:var(--text-warning)}
+.badge-b{background:var(--bg-accent);color:var(--text-accent)}
+.badge-n{background:var(--bg-success);color:var(--text-success)}
+.chart-wrap{background:var(--surface-1);border:0.5px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1.5rem}
+.chart-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.chart-title{font-size:13px;font-weight:500}
+.legend{display:flex;gap:12px;flex-wrap:wrap}
+.leg-item{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text-secondary)}
+.leg-dot{width:10px;height:10px;border-radius:2px}
+.canvas-wrap{position:relative;width:100%;height:260px}
+.insight-box{background:var(--surface-1);border:0.5px solid var(--border);border-radius:12px;padding:1rem;margin-bottom:1.5rem}
+.insight-title{font-size:13px;font-weight:500;margin-bottom:6px}
+.insight-text{font-size:13px;color:var(--text-secondary);line-height:1.6}
+.equation{background:var(--surface-0);border:0.5px solid var(--border);border-radius:var(--radius);padding:10px 14px;font-family:var(--font-mono);font-size:13px;margin:8px 0;color:var(--text-primary)}
+.eq-highlight{color:var(--text-accent)}
+.eq-highlight-b{color:var(--text-danger)}
+.sc-row{display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:12px;color:var(--text-secondary)}
+.sc-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.term-alert{background:var(--bg-danger);border:0.5px solid var(--border-danger);border-radius:var(--radius);padding:8px 12px;font-size:13px;color:var(--text-danger);margin-bottom:1rem;display:none}
+.history-wrap{background:var(--surface-1);border:0.5px solid var(--border);border-radius:12px;padding:1rem}
+.history-title{font-size:13px;font-weight:500;margin-bottom:8px}
+.history-list{font-size:12px;color:var(--text-secondary);max-height:100px;overflow-y:auto}
+.history-item{padding:3px 0;border-bottom:0.5px solid var(--border)}
+</style>
+
+<div class="sim-wrap">
+  <h2 class="sr-only">아스트로파지형 기후위기 복사평형 시뮬레이터 — 지구 에너지수지 변수를 조작해 온도 변화를 탐구합니다</h2>
+  <p class="sim-title">아스트로파지형 기후위기 복사평형 시뮬레이터</p>
+  <p class="sim-sub">슬라이더로 변수를 직접 조작하거나, 시나리오 버튼으로 소설·지구 역사·기술 개입 상황을 비교해보세요</p>
+
+  <div class="scenarios">
+    <button class="sc-btn active" onclick="applyScenario('base')" id="btn-base">기준 지구</button>
+    <button class="sc-btn danger" onclick="applyScenario('astro')" id="btn-astro">아스트로파지 발생</button>
+    <button class="sc-btn" onclick="applyScenario('astro50')" id="btn-astro50">아스트로파지 심화</button>
+    <button class="sc-btn" onclick="applyScenario('ordovician')" id="btn-ordovician">오르도비스기 말</button>
+    <button class="sc-btn success" onclick="applyScenario('nano')" id="btn-nano">나노입자 개입</button>
+    <button class="sc-btn danger" onclick="applyScenario('term')" id="btn-term">개입 중단 (termination shock)</button>
+    <button class="sc-btn warning" onclick="applyScenario('volcano')" id="btn-volcano">화산 폭발 (SRM 자연)</button>
+    <button class="sc-btn" onclick="applyScenario('greenhouse')" id="btn-greenhouse">온실가스 급증 (현재 위기)</button>
+  </div>
+
+  <div id="term-alert" class="term-alert">⚠ termination shock — 나노입자 개입을 중단하자 아스트로파지의 태양광 감소가 그대로 노출됩니다. 억눌려 있던 한랭화가 급격히 회복됩니다.</div>
+
+  <div class="panels">
+    <div class="panel">
+      <div class="panel-label">평형 온도 T</div>
+      <div class="panel-val" id="temp-val">—</div>
+      <div class="panel-delta" id="temp-delta"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-label">기준 대비 변화</div>
+      <div class="panel-val" id="delta-val">—</div>
+      <div class="panel-delta" id="active-path"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-label">유입 에너지 (W/m²)</div>
+      <div class="panel-val" id="ein-val">—</div>
+      <div class="panel-delta" id="ein-sub" style="font-size:12px;color:var(--text-secondary)">S(1−α)/4</div>
+    </div>
+    <div class="panel">
+      <div class="panel-label">유출 에너지 (W/m²)</div>
+      <div class="panel-val" id="eout-val">—</div>
+      <div class="panel-delta" id="eout-sub" style="font-size:12px;color:var(--text-secondary)">ε·σ·T⁴</div>
+    </div>
+  </div>
+
+  <div class="sliders-grid">
+    <div class="slider-box">
+      <div class="slider-header">
+        <span class="slider-name">태양상수 S (W/m²)</span>
+        <span class="slider-val" id="lbl-S">1361</span>
+      </div>
+      <p class="slider-desc">태양이 방출하는 에너지량. 아스트로파지가 줄임</p>
+      <input type="range" id="sl-S" min="800" max="1500" step="1" value="1361" oninput="onSlider()">
+      <span class="path-badge badge-a">경로 A 변수</span>
+    </div>
+    <div class="slider-box">
+      <div class="slider-header">
+        <span class="slider-name">알베도 α</span>
+        <span class="slider-val" id="lbl-A">0.30</span>
+      </div>
+      <p class="slider-desc">지구 반사율. 화산·에어로졸·나노입자로 변화</p>
+      <input type="range" id="sl-A" min="0.01" max="0.80" step="0.01" value="0.30" oninput="onSlider()">
+      <span class="path-badge badge-a">경로 A 변수</span>
+    </div>
+    <div class="slider-box">
+      <div class="slider-header">
+        <span class="slider-name">유효 방출률 ε</span>
+        <span class="slider-val" id="lbl-E">0.612</span>
+      </div>
+      <p class="slider-desc">온실가스가 열을 가두는 정도. 낮을수록 온난화</p>
+      <input type="range" id="sl-E" min="0.30" max="1.00" step="0.001" value="0.612" oninput="onSlider()">
+      <span class="path-badge badge-b">경로 B 변수</span>
+    </div>
+    <div class="slider-box">
+      <div class="slider-header">
+        <span class="slider-name">나노입자 보정 ΔS</span>
+        <span class="slider-val" id="lbl-N">+0</span>
+      </div>
+      <p class="slider-desc">나노입자 전방산란으로 늘어나는 유효 유입량</p>
+      <input type="range" id="sl-N" min="0" max="200" step="1" value="0" oninput="onSlider()">
+      <span class="path-badge badge-n">기술 개입 변수</span>
+    </div>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="chart-head">
+      <span class="chart-title">변수 변화에 따른 평형온도 추이</span>
+      <div class="legend">
+        <div class="leg-item"><div class="leg-dot" style="background:#2a78d6"></div>현재 온도</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#e24b4a"></div>기준 288K</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#1baf7a"></div>영구동토 임계 273K</div>
+      </div>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="mainChart" role="img" aria-label="복사평형 온도 변화 추이 차트"></canvas>
+    </div>
+  </div>
+
+  <div class="insight-box">
+    <p class="insight-title">현재 상태 해석</p>
+    <div class="equation" id="eq-display">T = [ S(1−α) / (4εσ) ]^(1/4)</div>
+    <p class="insight-text" id="insight-text">기준 지구 상태입니다. 슬라이더를 조작하거나 시나리오를 선택하세요.</p>
+    <div style="margin-top:10px" id="scenario-compare"></div>
+  </div>
+
+  <div class="history-wrap">
+    <p class="history-title">탐구 기록</p>
+    <div class="history-list" id="history-list"><p style="color:var(--text-muted);font-size:12px">시나리오를 바꾸면 여기에 기록됩니다</p></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const SIGMA = 5.67e-8;
+const BASE = { S: 1361, A: 0.30, E: 0.612, N: 0 };
+
+const SCENARIOS = {
+  base:       { S:1361, A:0.30, E:0.612, N:0,   label:"기준 지구",              path:"기준",    color:"#2a78d6" },
+  astro:      { S:1100, A:0.30, E:0.612, N:0,   label:"아스트로파지 발생",       path:"경로 A",  color:"#e24b4a" },
+  astro50:    { S:900,  A:0.30, E:0.612, N:0,   label:"아스트로파지 심화",       path:"경로 A",  color:"#a32d2d" },
+  ordovician: { S:1361, A:0.30, E:0.82,  N:0,   label:"오르도비스기 말",         path:"경로 B",  color:"#4a3aa7" },
+  nano:       { S:1100, A:0.22, E:0.612, N:80,  label:"나노입자 개입",           path:"기술 개입", color:"#1baf7a" },
+  term:       { S:1100, A:0.30, E:0.612, N:0,   label:"개입 중단 (termination)", path:"경로 A", color:"#eb6834" },
+  volcano:    { S:1361, A:0.40, E:0.612, N:0,   label:"화산 폭발 (자연 SRM)",   path:"경로 A",  color:"#888780" },
+  greenhouse: { S:1361, A:0.30, E:0.50,  N:0,   label:"온실가스 급증",          path:"경로 B",  color:"#eda100" },
+};
+
+let tempHistory = [];
+let chart = null;
+let currentScenario = 'base';
+
+function calcT(S, A, E, N) {
+  const effS = S + N;
+  const Ein = effS * (1 - A) / 4;
+  const T = Math.pow(Ein / (E * SIGMA), 0.25);
+  return { T, Ein, Eout: E * SIGMA * Math.pow(T, 4) };
+}
+
+function onSlider() {
+  const S = parseFloat(document.getElementById('sl-S').value);
+  const A = parseFloat(document.getElementById('sl-A').value);
+  const E = parseFloat(document.getElementById('sl-E').value);
+  const N = parseFloat(document.getElementById('sl-N').value);
+  document.getElementById('lbl-S').textContent = Math.round(S);
+  document.getElementById('lbl-A').textContent = A.toFixed(2);
+  document.getElementById('lbl-E').textContent = E.toFixed(3);
+  document.getElementById('lbl-N').textContent = '+' + Math.round(N);
+  updateDisplay(S, A, E, N);
+  deactivateAllBtns();
+}
+
+function setSliders(S, A, E, N) {
+  document.getElementById('sl-S').value = S;
+  document.getElementById('sl-A').value = A;
+  document.getElementById('sl-E').value = E;
+  document.getElementById('sl-N').value = N;
+  document.getElementById('lbl-S').textContent = Math.round(S);
+  document.getElementById('lbl-A').textContent = A.toFixed(2);
+  document.getElementById('lbl-E').textContent = E.toFixed(3);
+  document.getElementById('lbl-N').textContent = '+' + Math.round(N);
+}
+
+function applyScenario(key) {
+  currentScenario = key;
+  const sc = SCENARIOS[key];
+  setSliders(sc.S, sc.A, sc.E, sc.N);
+  updateDisplay(sc.S, sc.A, sc.E, sc.N, key);
+  deactivateAllBtns();
+  const btn = document.getElementById('btn-' + key);
+  if (btn) btn.classList.add('active');
+  const alert = document.getElementById('term-alert');
+  alert.style.display = (key === 'term') ? 'block' : 'none';
+}
+
+function deactivateAllBtns() {
+  document.querySelectorAll('.sc-btn').forEach(b => b.classList.remove('active'));
+}
+
+function updateDisplay(S, A, E, N, scenarioKey) {
+  const { T, Ein, Eout } = calcT(S, A, E, N);
+  const baseRes = calcT(BASE.S, BASE.A, BASE.E, BASE.N);
+  const delta = T - baseRes.T;
+  const Tk = Math.round(T);
+  const Tc = (T - 273.15).toFixed(1);
+  const deltaStr = (delta >= 0 ? '+' : '') + delta.toFixed(1);
+
+  document.getElementById('temp-val').textContent = Tk + ' K  (' + Tc + '°C)';
+  document.getElementById('ein-val').textContent = Ein.toFixed(1);
+  document.getElementById('eout-val').textContent = Eout.toFixed(1);
+
+  const deltaEl = document.getElementById('delta-val');
+  deltaEl.textContent = deltaStr + ' K';
+  deltaEl.className = 'panel-val ' + (delta < -2 ? 'delta-dn' : delta > 2 ? 'delta-up' : 'delta-neu');
+
+  const tempDeltaEl = document.getElementById('temp-delta');
+  if (Math.abs(delta) > 0.5) {
+    tempDeltaEl.textContent = delta < 0 ? '기준 대비 한랭화' : '기준 대비 온난화';
+    tempDeltaEl.className = 'panel-delta ' + (delta < 0 ? 'delta-dn' : 'delta-up');
+  } else {
+    tempDeltaEl.textContent = '기준 상태';
+    tempDeltaEl.className = 'panel-delta delta-neu';
+  }
+
+  const pathEl = document.getElementById('active-path');
+  const sc = scenarioKey ? SCENARIOS[scenarioKey] : null;
+  if (sc) {
+    const col = sc.path === '경로 A' ? 'badge-a' : sc.path === '경로 B' ? 'badge-b' : 'badge-n';
+    pathEl.innerHTML = '<span class="path-badge ' + col + '">' + sc.path + '</span>';
+  } else {
+    pathEl.innerHTML = '<span class="path-badge badge-n">수동 조작</span>';
+  }
+
+  updateInsight(S, A, E, N, T, delta, scenarioKey);
+  updateChart(T);
+  addHistory(S, A, E, N, T, delta, scenarioKey);
+}
+
+function updateInsight(S, A, E, N, T, delta, key) {
+  const effS = S + N;
+  const eq = document.getElementById('eq-display');
+  eq.innerHTML = 'T = [ <span class="eq-highlight">(' + Math.round(effS) + ')(1 − ' + A.toFixed(2) + ')</span> / (4 × <span class="eq-highlight-b">' + E.toFixed(3) + '</span> × σ) ]^(1/4) = <strong>' + Math.round(T) + ' K</strong>';
+
+  const txt = document.getElementById('insight-text');
+  const cmp = document.getElementById('scenario-compare');
+  cmp.innerHTML = '';
+
+  if (!key || key === 'base') {
+    txt.textContent = '기준 지구 상태입니다. S=1361 W/m², α=0.30, ε=0.612일 때 평형 온도는 약 288K(15°C)로 현실 지구와 일치합니다. 슬라이더를 조작하거나 시나리오를 선택해 변화를 탐구해보세요.';
+  } else if (key === 'astro') {
+    txt.textContent = '아스트로파지가 태양 표면에서 증식해 태양상수 S가 1361→1100 W/m²로 감소한 상황입니다. 이는 경로 A(유입량 감소)에 해당합니다. 온실가스나 반사율은 변하지 않았지만 온도는 ' + Math.abs(delta).toFixed(1) + 'K 하강합니다.';
+    addCompare(cmp);
+  } else if (key === 'astro50') {
+    txt.textContent = '아스트로파지가 극단적으로 증식해 S가 900 W/m²까지 하락한 심화 시나리오입니다. 기준 대비 ' + Math.abs(delta).toFixed(1) + 'K 하강으로 지구 전면 동결 위기에 해당합니다.';
+    addCompare(cmp);
+  } else if (key === 'ordovician') {
+    txt.textContent = '오르도비스기 말, 육상식물 확산으로 CO₂가 급감하며 온실효과가 약화된 상황입니다. S와 α는 불변이지만 ε이 0.612→0.82로 증가(열을 덜 가둠)해 경로 B 한랭화가 발생합니다. 아스트로파지 상황과 동일한 온도 하락이지만 물리적 원인이 다릅니다.';
+    addCompare(cmp);
+  } else if (key === 'nano') {
+    txt.textContent = '아스트로파지 상황(S=1100)에서 나노막대(Ansari et al. 2024)를 살포, α를 0.22로 낮추고 전방산란 ΔS=+80 W/m²을 확보한 상태입니다. 온도가 기준과 유사한 수준으로 회복됩니다. 단, 이 상태는 지속적인 살포에 의존합니다.';
+    addCompare(cmp);
+  } else if (key === 'term') {
+    txt.textContent = '나노입자 살포를 중단한 상태입니다. S는 여전히 1100 W/m²이고 기술적 보정이 사라졌습니다. 억눌려 있던 아스트로파지 한랭화가 그대로 노출되는 termination shock입니다.';
+    addCompare(cmp);
+  } else if (key === 'volcano') {
+    txt.textContent = '거대 화산 폭발로 성층권에 황산염 에어로졸이 뿌려져 α가 0.30→0.40으로 상승한 상태입니다. 이는 경로 A이지만 S 감소가 아닌 α 증가로 인한 냉각입니다. 피나투보 화산(1991) 등이 실제 사례입니다.';
+  } else if (key === 'greenhouse') {
+    txt.textContent = '온실가스 누적으로 ε이 감소(0.612→0.50)한 현재의 기후변화 상황입니다. 경로 B 온난화로, SRM 기술은 이 상황을 상쇄하기 위해 α를 높이는 방향으로 작동합니다. KISTEP 브리프가 다루는 SRM은 바로 이 경우입니다.';
+  }
+}
+
+function addCompare(cmp) {
+  const rows = [
+    { key: 'astro', label: '아스트로파지 발생' },
+    { key: 'ordovician', label: '오르도비스기 말' },
+    { key: 'nano', label: '나노입자 개입' },
+    { key: 'term', label: '개입 중단' },
+  ];
+  let html = '<div style="margin-top:8px;font-size:12px;color:var(--text-secondary);font-weight:500;margin-bottom:4px">주요 시나리오 비교</div>';
+  rows.forEach(r => {
+    const sc = SCENARIOS[r.key];
+    const { T } = calcT(sc.S, sc.A, sc.E, sc.N);
+    const d = T - 288.15;
+    html += '<div class="sc-row"><div class="sc-dot" style="background:' + sc.color + '"></div>' + r.label + ' — ' + Math.round(T) + ' K (' + (d>=0?'+':'') + d.toFixed(1) + 'K)</div>';
+  });
+  cmp.innerHTML = html;
+}
+
+function addHistory(S, A, E, N, T, delta, key) {
+  const label = key ? SCENARIOS[key].label : '수동 조작';
+  const entry = label + ' → ' + Math.round(T) + 'K (' + (delta>=0?'+':'') + delta.toFixed(1) + 'K)';
+  tempHistory.unshift(entry);
+  if (tempHistory.length > 12) tempHistory.pop();
+  const list = document.getElementById('history-list');
+  list.innerHTML = tempHistory.map(e => '<div class="history-item">' + e + '</div>').join('');
+}
+
+let chartData = [];
+function updateChart(T) {
+  chartData.push(Math.round(T * 10) / 10);
+  if (chartData.length > 30) chartData.shift();
+
+  if (!chart) {
+    const ctx = document.getElementById('mainChart').getContext('2d');
+    chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: chartData.map((_, i) => i + 1),
+        datasets: [
+          {
+            label: '평형 온도 (K)',
+            data: [...chartData],
+            borderColor: '#2a78d6',
+            borderWidth: 2,
+            pointRadius: 3,
+            pointBackgroundColor: '#2a78d6',
+            fill: false,
+            tension: 0.3,
+          },
+          {
+            label: '기준선 288K',
+            data: Array(30).fill(288),
+            borderColor: '#e24b4a',
+            borderWidth: 1,
+            borderDash: [4, 4],
+            pointRadius: 0,
+            fill: false,
+          },
+          {
+            label: '영구동토 임계 273K',
+            data: Array(30).fill(273),
+            borderColor: '#1baf7a',
+            borderWidth: 1,
+            borderDash: [2, 4],
+            pointRadius: 0,
+            fill: false,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { display: false },
+          y: {
+            min: 240,
+            max: 310,
+            ticks: { color: '#898781', font: { size: 12 }, callback: v => v + 'K' },
+            grid: { color: '#e1e0d9' },
+          },
+        },
+        animation: { duration: 300 },
+      },
+    });
+  } else {
+    chart.data.labels = chartData.map((_, i) => i + 1);
+    chart.data.datasets[0].data = [...chartData];
+    chart.update();
+  }
+}
+
+applyScenario('base');
+</script>
